@@ -118,14 +118,14 @@ class c_ocr
      */
     static function get_colors_index()
     {
-        self::$colors_index['index']=array();
+        self::$colors_index=array();
         for($x=0;$x<self::$img_info[0];$x++)
         {
             for($y=0;$y<self::$img_info[1];$y++)
             {
                 $pixel_index=imagecolorat(self::$img,$x,$y);
                 self::$colors_index['pix'][$x][$y]=$pixel_index;
-                if(array_key_exists($pixel_index,self::$colors_index['index']))
+                if(isset(self::$colors_index['index']) && array_key_exists($pixel_index,self::$colors_index['index']))
                     self::$colors_index['index'][$pixel_index]++;
                 else self::$colors_index['index'][$pixel_index]=1;
             }
@@ -219,6 +219,7 @@ class c_ocr
             )
                 $bottom_line[]=$y;
         }
+        // Находим кратное 2 количество строк
         if(!count($top_line) || !count($bottom_line))
         {
             $top_line[]=0;
@@ -227,15 +228,36 @@ class c_ocr
         elseif(count($top_line)==count($bottom_line)) /* :| ниче не делаю, сокращаю время выполнения */ ;
         elseif(count($top_line)>count($bottom_line)) $top_line=array_slice($top_line,0,count($bottom_line));
         elseif(count($top_line)<count($bottom_line)) $bottom_line=array_slice($bottom_line,0,count($top_line));
-        /*
-        $red=imagecolorallocate(self::$img, 255, 0, 0);
+        /* TODO: Сделать подсчет последовательности строк, чтоб избежать двух подряд верхних краев строки */
+        // Ищем самую низкую строку для захвата заглавных букв
+        // Ищем самую низкую строку для захвата заглавных букв
+        $h_min=99999;
+        foreach ($top_line as $key => $value)
+        {
+            $h_line=$bottom_line[$key]-$top_line[$key];
+            if($h_min>$h_line) $h_min=$h_line;
+        }
+        // Увеличим все строки на треть самой маленькой
+        $change_size=0.35*$h_min;
+        foreach ($top_line as $key => $value)
+        {
+            if(($top_line[$key]-$change_size)>=0) $top_line[$key]-=$change_size;
+            if(($bottom_line[$key]+$change_size)<=self::$img_info[1]) $bottom_line[$key]+=$change_size;
+        }
+       /* $red=imagecolorallocate(self::$img, 255, 0, 0);
         $green=imagecolorallocate(self::$img, 0, 255, 0);
         foreach ($top_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$red);
         foreach ($bottom_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$green);
-        */
         $coord['top']=$top_line;
-        $coord['bot']=$bottom_line;
-        return $coord;
+        $coord['bot']=$bottom_line;*/
+        // Нарезаем на полоски с текстом
+        $img_line=array();
+        foreach ($top_line as $key => $value)
+        {
+            $img_line[$key]=imagecreatetruecolor(self::$img_info[0], $bottom_line[$key]-$top_line[$key]);
+            imagecopy($img_line[$key],self::$img,0,0,0,$top_line[$key],self::$img_info[0],$bottom_line[$key]-$top_line[$key]);
+        }
+        return $img_line;
     }
 
     /**
