@@ -16,6 +16,11 @@ class c_ocr
      */
     public static $img;
     /**
+     * Массив с нарезаными строками текста
+     * @var array
+     */
+    public static $img_line;
+    /**
      * Массив рисунков символов для распознования
      * @var array array(GD)
      */
@@ -44,22 +49,6 @@ class c_ocr
      */
     public static $colors_index;
 
-    /**
-     * Средняя яркасть рисунка
-     * @var float
-     */
-    public static $brightness_img;
-
-    /**
-     * Средняя яркость фона изображения
-     * @var float
-     */
-    public static $brightness_background;
-    /**
-     * Средняя яркость текста
-     * @var float
-     */
-    public static $brightness_text;
     /**
      * @param string $img_file Имя файла с исображением
      * @return int|resource
@@ -107,36 +96,39 @@ class c_ocr
                 break;
         }
         imagecopy(self::$img, $tmp_img, 0, 0, 0, 0, self::$img_info[0], self::$img_info[1]);
+        c_ocr::check_background_brightness();
         return self::$img;
     }
 
     /**
      * Подсчитываем количество цветов в изображении и их долю в палитре
      * Сбор индексов цвета каждого пикселя
+     * @param GD $img
      * @return array
-     *
      */
-    static function get_colors_index()
+    static function get_colors_index($img)
     {
-        self::$colors_index=array();
-        for($x=0;$x<self::$img_info[0];$x++)
+        $colors_index=array();
+        $img_info[0]=imagesx($img);
+        $img_info[1]=imagesy($img);
+        for($x=0;$x<$img_info[0];$x++)
         {
-            for($y=0;$y<self::$img_info[1];$y++)
+            for($y=0;$y<$img_info[1];$y++)
             {
-                $pixel_index=imagecolorat(self::$img,$x,$y);
-                self::$colors_index['pix'][$x][$y]=$pixel_index;
-                if(isset(self::$colors_index['index']) && array_key_exists($pixel_index,self::$colors_index['index']))
-                    self::$colors_index['index'][$pixel_index]++;
-                else self::$colors_index['index'][$pixel_index]=1;
+                $pixel_index=imagecolorat($img,$x,$y);
+                $colors_index['pix'][$x][$y]=$pixel_index;
+                if(isset($colors_index['index']) && array_key_exists($pixel_index,$colors_index['index']))
+                    $colors_index['index'][$pixel_index]++;
+                else $colors_index['index'][$pixel_index]=1;
             }
         }
-        arsort(self::$colors_index['index'],SORT_NUMERIC);
-        self::$colors_index['count_pix']=self::$img_info[0]*self::$img_info[1];
-        foreach (self::$colors_index['index'] as $key => $value)
+        arsort($colors_index['index'],SORT_NUMERIC);
+        $colors_index['count_pix']=$img_info[0]*$img_info[1];
+        foreach ($colors_index['index'] as $key => $value)
         {
-            self::$colors_index['percent'][$key]=($value/self::$colors_index['count_pix'])*100;
+            $colors_index['percent'][$key]=($value/$colors_index['count_pix'])*100;
         }
-        return self::$colors_index;
+        return $colors_index;
     }
 
     /**
@@ -144,7 +136,7 @@ class c_ocr
      */
     static function check_background_brightness()
     {
-        $count_colors=self::get_colors_index();
+        $count_colors=self::get_colors_index(self::$img);
         reset($count_colors['index']);
         $background_index=key($count_colors['index']);
         $background_color=imagecolorsforindex(self::$img, $background_index);
@@ -165,57 +157,57 @@ class c_ocr
         }
         foreach ($mid_color as &$value) $value/=$count_text_color; //Вычисляем средний цвет текста
         unset($value);
-        self::$brightness_background=($background_color['red']+$background_color['green']+$background_color['blue'])/3;
-        self::$brightness_text=($mid_color['red']+$mid_color['green']+$mid_color['blue'])/3;
-        if(self::$brightness_background<self::$brightness_text)
-        {
-            imagefilter(self::$img,IMG_FILTER_NEGATE); //Инвертируем если фон черный
-            self::get_colors_index();
-        }
+        $brightness_background=($background_color['red']+$background_color['green']+$background_color['blue'])/3;
+        $brightness_text=($mid_color['red']+$mid_color['green']+$mid_color['blue'])/3;
+        if($brightness_background<$brightness_text) imagefilter(self::$img,IMG_FILTER_NEGATE); //Инвертируем если фон черный
     }
 
     /**
      * Разбивает рисунок с текстом на маленькие рисунки с символом
      */
-    static function divide_char()
+    static function divide_char($img)
     {
+        self::divide_to_word($img);
 
     }
 
     /**
      *  Разбивает рисунок на строки с текстом
      */
-    static function divide_to_line()
+    static function divide_to_line($img)
     {
         // Находим среднее значение яркости каждой пиксельной строки и всего рисунка
         $brightness_lines=array();
-        self::$brightness_img=0;
-        for($y=0;$y<self::$img_info[1];$y++)
+        $brightness_img=0;
+        $colors_index=get_colors_index($img);
+        $img_info[0]=imagesx($img);
+        $img_info[1]=imagesy($img);
+        for($y=0;$y<$img_info[1];$y++)
         {
             $brightness_lines[$y]=0;
-            for($x=0;$x<self::$img_info[0];$x++) $brightness_lines[$y]+=self::get_brightness_to_index(self::$colors_index['pix'][$x][$y]);
-            $brightness_lines[$y]/=self::$img_info[0];
-            self::$brightness_img+=$brightness_lines[$y];
+            for($x=0;$x<$img_info[0];$x++) $brightness_lines[$y]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img);
+            $brightness_lines[$y]/=$img_info[0];
+            $brightness_img+=$brightness_lines[$y];
         }
-        self::$brightness_img/=self::$img_info[1];
+        $brightness_img/=$img_info[1];
         $top_line=array();
         $bottom_line=array();
         //Находим все верхние и нижние границы строк текста
-        for($y=2;$y<self::$img_info[1]-2;$y++)
+        for($y=2;$y<$img_info[1]-2;$y++)
         {
             //Top
-            if( $brightness_lines[$y-2]>self::$brightness_img &&
-                $brightness_lines[$y-1]>self::$brightness_img &&
-                $brightness_lines[$y]>self::$brightness_img &&
-                $brightness_lines[$y+1]<self::$brightness_img &&
-                $brightness_lines[$y+2]<self::$brightness_img
+            if( $brightness_lines[$y-2]>$brightness_img &&
+                $brightness_lines[$y-1]>$brightness_img &&
+                $brightness_lines[$y]>$brightness_img &&
+                $brightness_lines[$y+1]<$brightness_img &&
+                $brightness_lines[$y+2]<$brightness_img
             )
                 $top_line[]=$y;
-            elseif($brightness_lines[$y-2]<self::$brightness_img &&
-                $brightness_lines[$y-1]<self::$brightness_img &&
-                $brightness_lines[$y]>self::$brightness_img &&
-                $brightness_lines[$y+1]>self::$brightness_img &&
-                $brightness_lines[$y+2]>self::$brightness_img
+            elseif($brightness_lines[$y-2]<$brightness_img &&
+                $brightness_lines[$y-1]<$brightness_img &&
+                $brightness_lines[$y]>$brightness_img &&
+                $brightness_lines[$y+1]>$brightness_img &&
+                $brightness_lines[$y+2]>$brightness_img
             )
                 $bottom_line[]=$y;
         }
@@ -223,13 +215,12 @@ class c_ocr
         if(!count($top_line) || !count($bottom_line))
         {
             $top_line[]=0;
-            $bottom_line[]=self::$img_info[1]-1;
+            $bottom_line[]=$img_info[1]-1;
         }
         elseif(count($top_line)==count($bottom_line)) /* :| ниче не делаю, сокращаю время выполнения */ ;
         elseif(count($top_line)>count($bottom_line)) $top_line=array_slice($top_line,0,count($bottom_line));
         elseif(count($top_line)<count($bottom_line)) $bottom_line=array_slice($bottom_line,0,count($top_line));
-        /* TODO: Сделать подсчет последовательности строк, чтоб избежать двух подряд верхних краев строки */
-        // Ищем самую низкую строку для захвата заглавных букв
+        /** TODO: Сделать подсчет последовательности строк, чтоб избежать двух подряд верхних краев строки **/
         // Ищем самую низкую строку для захвата заглавных букв
         $h_min=99999;
         foreach ($top_line as $key => $value)
@@ -242,22 +233,25 @@ class c_ocr
         foreach ($top_line as $key => $value)
         {
             if(($top_line[$key]-$change_size)>=0) $top_line[$key]-=$change_size;
-            if(($bottom_line[$key]+$change_size)<=self::$img_info[1]) $bottom_line[$key]+=$change_size;
+            if(($bottom_line[$key]+$change_size)<=$img_info[1]) $bottom_line[$key]+=$change_size;
         }
-       /* $red=imagecolorallocate(self::$img, 255, 0, 0);
-        $green=imagecolorallocate(self::$img, 0, 255, 0);
-        foreach ($top_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$red);
-        foreach ($bottom_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$green);
-        $coord['top']=$top_line;
-        $coord['bot']=$bottom_line;*/
         // Нарезаем на полоски с текстом
         $img_line=array();
         foreach ($top_line as $key => $value)
         {
-            $img_line[$key]=imagecreatetruecolor(self::$img_info[0], $bottom_line[$key]-$top_line[$key]);
-            imagecopy($img_line[$key],self::$img,0,0,0,$top_line[$key],self::$img_info[0],$bottom_line[$key]-$top_line[$key]);
+            $img_line[$key]=imagecreatetruecolor($img_info[0], $bottom_line[$key]-$top_line[$key]);
+            imagecopy($img_line[$key],$img,0,0,0,$top_line[$key],$img_info[0],$bottom_line[$key]-$top_line[$key]);
         }
-        return $img_line;
+    }
+
+    /**
+     * Разбиваем текстовые строки на слова
+     */
+    static function divide_to_word($img)
+    {
+        $img_line=self::divide_to_line($img);
+        $img_line[0];
+
     }
 
     /**
