@@ -95,17 +95,11 @@ class c_ocr
                 $transparent_index=imagecolortransparent($tmp_img);
                 if($transparent_index!==-1)
                 {
-                    //$transparent_color=imagecolorsforindex($tmp_img, $transparent_index);
-                    //$transparent_img_index=imagecolorallocate(self::$img, $transparent_color['red'], $transparent_color['green'], $transparent_color['blue']);
-                    //imagecolortransparent(self::$img, $transparent_img_index);
-                    //imagefill(self::$img, 0, 0, $transparent_img_index);
                     $white=imagecolorallocate(self::$img, 255, 255, 255);
                     imagefill(self::$img, 0, 0, $white);
                 }
                 break;
             case IMAGETYPE_PNG:
-                //imagealphablending(self::$img, false);
-                //imagesavealpha(self::$img, true);
                 $white=imagecolorallocate(self::$img, 255, 255, 255);
                 imagefill(self::$img, 0, 0, $white);
                 break;
@@ -146,7 +140,7 @@ class c_ocr
     }
 
     /**
-     * Вычисления цвета фона изображения с текстом, Фон светлее текста или наоборот, если темнее то цвета инвертируются цвета
+     * Вычисления цвета фона изображения с текстом, Фон светлее текста или наоборот, если темнее то цвета инвертируются
      */
     static function check_background_brightness()
     {
@@ -157,14 +151,14 @@ class c_ocr
         $mid_color['red']=0;
         $mid_color['green']=0;
         $mid_color['blue']=0;
-        // Собираем все цвета текста
+        // Собираем все цвета отличные от фона
         $count_text_color=0;
+        $color_index_text=array();
         while(next($count_colors['index']))
         {
-            if($count_colors['percent'][key($count_colors['index'])]<1) continue;
             $count_text_color++;
-            $color_index=key($count_colors['index']);
-            $color=imagecolorsforindex(self::$img, $color_index);
+            $color_index_text[]=key($count_colors['index']);
+            $color=imagecolorsforindex(self::$img, key($count_colors['index']));
             $mid_color['red']+=$color['red'];
             $mid_color['green']+=$color['green'];
             $mid_color['blue']+=$color['blue'];
@@ -175,13 +169,13 @@ class c_ocr
         self::$brightness_text=($mid_color['red']+$mid_color['green']+$mid_color['blue'])/3;
         if(self::$brightness_background<self::$brightness_text)
         {
-            imagefilter(self::$img,IMG_FILTER_NEGATE);
+            imagefilter(self::$img,IMG_FILTER_NEGATE); //Инвертируем если фон черный
             self::get_colors_index();
         }
     }
 
     /**
-     * Разбивает ресунок с текстом на маленькие рисунки с символом
+     * Разбивает рисунок с текстом на маленькие рисунки с символом
      */
     static function divide_char()
     {
@@ -207,15 +201,14 @@ class c_ocr
         $top_line=array();
         $bottom_line=array();
         //Находим все верхние и нижние границы строк текста
-        for($y=2;$y<self::$img_info[1]-3;$y++)
+        for($y=2;$y<self::$img_info[1]-2;$y++)
         {
             //Top
-            if($brightness_lines[$y-2]>self::$brightness_img &&
-               $brightness_lines[$y-1]>self::$brightness_img &&
-               $brightness_lines[$y]>self::$brightness_img &&
-               $brightness_lines[$y+1]<self::$brightness_img &&
-               $brightness_lines[$y+2]<self::$brightness_img &&
-               $brightness_lines[$y+3]<self::$brightness_img
+            if( $brightness_lines[$y-2]>self::$brightness_img &&
+                $brightness_lines[$y-1]>self::$brightness_img &&
+                $brightness_lines[$y]>self::$brightness_img &&
+                $brightness_lines[$y+1]<self::$brightness_img &&
+                $brightness_lines[$y+2]<self::$brightness_img
             )
                 $top_line[]=$y;
             elseif($brightness_lines[$y-2]<self::$brightness_img &&
@@ -226,13 +219,22 @@ class c_ocr
             )
                 $bottom_line[]=$y;
         }
-        $coord['top']=$top_line;
-        $coord['bot']=$bottom_line;
+        if(!count($top_line) || !count($bottom_line))
+        {
+            $top_line[]=0;
+            $bottom_line[]=self::$img_info[1]-1;
+        }
+        elseif(count($top_line)==count($bottom_line)) /* :| ниче не делаю, сокращаю время выполнения */ ;
+        elseif(count($top_line)>count($bottom_line)) $top_line=array_slice($top_line,0,count($bottom_line));
+        elseif(count($top_line)<count($bottom_line)) $bottom_line=array_slice($bottom_line,0,count($top_line));
+        /*
         $red=imagecolorallocate(self::$img, 255, 0, 0);
         $green=imagecolorallocate(self::$img, 0, 255, 0);
         foreach ($top_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$red);
         foreach ($bottom_line as $value) imageline(self::$img, 0, $value, self::$img_info[0], $value,$green);
-
+        */
+        $coord['top']=$top_line;
+        $coord['bot']=$bottom_line;
         return $coord;
     }
 
