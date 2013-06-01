@@ -1,12 +1,9 @@
 <?php
 namespace php_ocr\c_ocr;
+
 /**
  * Class c_ocr
- * Класс для распознования текста на изображении с помощью шаблонов.
- * Режим Обучение - скармливаете рисунок и
- * @author Evgeny Pynykh <bpteam22@gmail.com>
- * @package php_ocr
- * @version 2.0
+ * @package php_ocr\c_ocr
  */
 class c_ocr
 {
@@ -190,7 +187,7 @@ class c_ocr
      */
     static function divide_char($img)
     {
-        self::divide_to_word($img);
+        $img_word=self::divide_to_word($img);
 
     }
 
@@ -278,63 +275,63 @@ class c_ocr
     static function divide_to_word($img)
     {
         $img_line=self::divide_to_line($img);
-        $key=0;
-
-        $bold_img=self::bold_text($img_line[$key],'height');
-        //return $bold_img;
-        $colors_index_bold=self::get_colors_index($bold_img);
-        $colors_index=self::get_colors_index($img_line[$key]);
-        $img_info['x']=imagesx($bold_img);
-        $img_info['y']=imagesy($bold_img);
-        $brightness_img=0;
-        $brightness_row=array();
-        for($x=0;$x<$img_info['x'];$x++)
-        {
-            $brightness_row[$x]=0;
-            $brightness_row_normal[$x]=0;
-            for($y=0;$y<$img_info['y'];$y++)
-            {
-                $brightness_row[$x]+=self::get_brightness_to_index($colors_index_bold['pix'][$x][$y],$bold_img);
-                $brightness_row_normal[$x]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img_line[$key]);
-            }
-            $brightness_row[$x]/=$img_info['y'];
-            $brightness_img+=$brightness_row_normal[$x]/$img_info['y'];
-        }
-        $brightness_img/=$img_info['x'];
-        $begin_word=array();
-        $end_word=array();
-        // Ищем начало и конец слова
-        for($x=2;$x<$img_info['x']-2;$x++)
-        {
-            //Begin
-            if( $brightness_row[$x-2]>$brightness_img &&
-                $brightness_row[$x-1]>$brightness_img &&
-                $brightness_row[$x]>$brightness_img &&
-                $brightness_row[$x+1]<$brightness_img &&
-                $brightness_row[$x+2]<$brightness_img
-            )
-                $begin_word[]=$x;
-            // End
-            elseif($brightness_row[$x-2]<$brightness_img &&
-                $brightness_row[$x-1]<$brightness_img &&
-                $brightness_row[$x]>$brightness_img &&
-                $brightness_row[$x+1]>$brightness_img &&
-                $brightness_row[$x+2]>$brightness_img
-            )
-            {
-                $end_word[]=$x;
-            }
-        }
-        // Нарезаем на слова
         $img_word=array();
-        foreach ($begin_word as $word_key => $value)
+        foreach ($img_line as $key => $value)
         {
-            $img_word[]=imagecreatetruecolor($img_info['x']+4, $end_word[$word_key]-$begin_word[$word_key]+4);
-            end($img_word);
-            $key_array_word=key($img_word);
-            $white=imagecolorallocate($img_word[$key_array_word], 255, 255, 255);
-            imagefill($img_word[$key_array_word], 0, 0, $white);
-            imagecopy($img_word[$key_array_word],$img_line[$key],2,2,$begin_word[$word_key],0,$end_word[$word_key]-$begin_word[$word_key],$img_info['y']);
+            $bold_img=self::bold_text($img_line[$key],'height');
+            $colors_index_bold=self::get_colors_index($bold_img);
+            $colors_index=self::get_colors_index($img_line[$key]);
+            $img_info['x']=imagesx($bold_img);
+            $img_info['y']=imagesy($bold_img);
+            $brightness_img=0;
+            $brightness_row=array();
+            for($x=0;$x<$img_info['x'];$x++)
+            {
+                $brightness_row[$x]=0;
+                $brightness_row_normal[$x]=0;
+                for($y=0;$y<$img_info['y'];$y++)
+                {
+                    $brightness_row[$x]+=self::get_brightness_to_index($colors_index_bold['pix'][$x][$y],$bold_img);
+                    $brightness_row_normal[$x]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img_line[$key]);
+                }
+                $brightness_row[$x]/=$img_info['y'];
+                $brightness_img+=$brightness_row_normal[$x]/$img_info['y'];
+            }
+            $brightness_img/=$img_info['x'];
+            $begin_word=array();
+            $end_word=array();
+            // Ищем начало и конец слова
+            for($x=2;$x<$img_info['x']-2;$x++)
+            {
+                // Проверка на начоло
+                if( $brightness_row[$x-2]>$brightness_img &&
+                    $brightness_row[$x-1]>$brightness_img &&
+                    $brightness_row[$x]>$brightness_img &&
+                    $brightness_row[$x+1]<$brightness_img &&
+                    $brightness_row[$x+2]<$brightness_img
+                )
+                    $begin_word[]=$x;
+                // Проверка на конец
+                elseif($brightness_row[$x-2]<$brightness_img &&
+                    $brightness_row[$x-1]<$brightness_img &&
+                    $brightness_row[$x]>$brightness_img &&
+                    $brightness_row[$x+1]>$brightness_img &&
+                    $brightness_row[$x+2]>$brightness_img
+                )
+                {
+                    $end_word[]=$x;
+                }
+            }
+            // Нарезаем на слова
+            foreach ($begin_word as $word_key => $value)
+            {
+                $img_word[]=imagecreatetruecolor($img_info['x']+4, $end_word[$word_key]-$begin_word[$word_key]+4);
+                end($img_word);
+                $key_array_word=key($img_word);
+                $white=imagecolorallocate($img_word[$key_array_word], 255, 255, 255);
+                imagefill($img_word[$key_array_word], 0, 0, $white);
+                imagecopy($img_word[$key_array_word],$img_line[$key],2,2,$begin_word[$word_key],0,$end_word[$word_key]-$begin_word[$word_key],$img_info['y']);
+            }
         }
         return $img_word;
     }
