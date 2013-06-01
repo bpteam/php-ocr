@@ -127,8 +127,6 @@ class c_ocr
         // Собираем все цвета отличные от фона
         if(self::$img_info[2]==IMAGETYPE_JPEG)
         {
-            //$mid_color_text=self::get_mid_color_to_indexes($img,array_keys($count_colors['index']));
-            //$mid_brightness_text=($mid_color_text['red']+$mid_color_text['green']+$mid_color_text['blue'])/3;
             $background_brightness=self::get_brightness_to_index($background_index,$img);
             $background_brightness=$background_brightness-($background_brightness*0.2);
             foreach ($count_colors['index'] as $key => $value)
@@ -183,64 +181,17 @@ class c_ocr
     }
 
     /**
-     * Разбивает рисунок с текстом на маленькие рисунки с символом
-     */
-    static function divide_char($img)
-    {
-        $img_word=self::divide_to_word($img);
-
-    }
-
-    /**
      * Разбивает рисунок на строки с текстом
      * @param resource $img
      * @return array
      */
     static function divide_to_line($img)
     {
-        // Находим среднее значение яркости каждой пиксельной строки и всего рисунка
-        $brightness_lines=array();
-        $brightness_img=0;
-        $bold_img=self::bold_text($img,'width');
-        $colors_index_bold=self::get_colors_index($bold_img);
-        $colors_index=self::get_colors_index($img);
-        $img_info['x']=imagesx($bold_img);
-        $img_info['y']=imagesy($bold_img);
-        for($y=0;$y<$img_info['y'];$y++)
-        {
-            $brightness_lines[$y]=0;
-            $brightness_lines_normal[$y]=0;
-            for($x=0;$x<$img_info['x'];$x++)
-            {
-                $brightness_lines[$y]+=self::get_brightness_to_index($colors_index_bold['pix'][$x][$y],$bold_img);
-                $brightness_lines_normal[$y]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img);
-            }
-            $brightness_lines[$y]/=$img_info['x'];
-            $brightness_img+=$brightness_lines_normal[$y]/$img_info['x'];
-        }
-        $brightness_img/=$img_info['y'];
-        $top_line=array();
-        $bottom_line=array();
-        //Находим все верхние и нижние границы строк текста
-        for($y=2;$y<$img_info['y']-2;$y++)
-        {
-            //Top
-            if( $brightness_lines[$y-2]>$brightness_img &&
-                $brightness_lines[$y-1]>$brightness_img &&
-                $brightness_lines[$y]>$brightness_img &&
-                $brightness_lines[$y+1]<$brightness_img &&
-                $brightness_lines[$y+2]<$brightness_img
-            )
-                $top_line[]=$y;
-            //Bottom
-            elseif($brightness_lines[$y-2]<$brightness_img &&
-                $brightness_lines[$y-1]<$brightness_img &&
-                $brightness_lines[$y]>$brightness_img &&
-                $brightness_lines[$y+1]>$brightness_img &&
-                $brightness_lines[$y+2]>$brightness_img
-            )
-                $bottom_line[]=$y;
-        }
+        $img_info['x']=imagesx($img);
+        $img_info['y']=imagesy($img);
+        $coordinates=self::coordinates_img($img);
+        $top_line=$coordinates['start'];
+        $bottom_line=$coordinates['end'];
         // Ищем самую низкую строку для захвата заглавных букв
         $h_min=99999;
         foreach ($top_line as $key => $value)
@@ -248,7 +199,7 @@ class c_ocr
             $h_line=$bottom_line[$key]-$top_line[$key];
             if($h_min>$h_line) $h_min=$h_line;
         }
-        // Увеличим все строки на треть самой маленькой
+        // Увеличим все строки на треть самой маленькой для захвата заглавных букв м хвостов букв
         $change_size=0.35*$h_min;
         foreach ($top_line as $key => $value)
         {
@@ -276,66 +227,125 @@ class c_ocr
     {
         $img_line=self::divide_to_line($img);
         $img_word=array();
-        foreach ($img_line as $key => $value)
+        foreach ($img_line as $line_value)
         {
-            $bold_img=self::bold_text($img_line[$key],'height');
-            $colors_index_bold=self::get_colors_index($bold_img);
-            $colors_index=self::get_colors_index($img_line[$key]);
-            $img_info['x']=imagesx($bold_img);
-            $img_info['y']=imagesy($bold_img);
-            $brightness_img=0;
-            $brightness_row=array();
-            for($x=0;$x<$img_info['x'];$x++)
-            {
-                $brightness_row[$x]=0;
-                $brightness_row_normal[$x]=0;
-                for($y=0;$y<$img_info['y'];$y++)
-                {
-                    $brightness_row[$x]+=self::get_brightness_to_index($colors_index_bold['pix'][$x][$y],$bold_img);
-                    $brightness_row_normal[$x]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img_line[$key]);
-                }
-                $brightness_row[$x]/=$img_info['y'];
-                $brightness_img+=$brightness_row_normal[$x]/$img_info['y'];
-            }
-            $brightness_img/=$img_info['x'];
-            $begin_word=array();
-            $end_word=array();
-            // Ищем начало и конец слова
-            for($x=2;$x<$img_info['x']-2;$x++)
-            {
-                // Проверка на начоло
-                if( $brightness_row[$x-2]>$brightness_img &&
-                    $brightness_row[$x-1]>$brightness_img &&
-                    $brightness_row[$x]>$brightness_img &&
-                    $brightness_row[$x+1]<$brightness_img &&
-                    $brightness_row[$x+2]<$brightness_img
-                )
-                    $begin_word[]=$x;
-                // Проверка на конец
-                elseif($brightness_row[$x-2]<$brightness_img &&
-                    $brightness_row[$x-1]<$brightness_img &&
-                    $brightness_row[$x]>$brightness_img &&
-                    $brightness_row[$x+1]>$brightness_img &&
-                    $brightness_row[$x+2]>$brightness_img
-                )
-                {
-                    $end_word[]=$x;
-                }
-            }
+            $img_info['x']=imagesx($line_value);
+            $img_info['y']=imagesy($line_value);
+            $coordinates=self::coordinates_img($line_value,true);
+            $begin_word=$coordinates['start'];
+            $end_word=$coordinates['end'];
             // Нарезаем на слова
-            foreach ($begin_word as $word_key => $value)
+            foreach ($begin_word as $begin_key => $begin_value)
             {
-                $img_word[]=imagecreatetruecolor($img_info['x']+4, $end_word[$word_key]-$begin_word[$word_key]+4);
+                $img_word[]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
                 end($img_word);
                 $key_array_word=key($img_word);
                 $white=imagecolorallocate($img_word[$key_array_word], 255, 255, 255);
                 imagefill($img_word[$key_array_word], 0, 0, $white);
-                imagecopy($img_word[$key_array_word],$img_line[$key],2,2,$begin_word[$word_key],0,$end_word[$word_key]-$begin_word[$word_key],$img_info['y']);
+                imagecopy($img_word[$key_array_word],$line_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
             }
         }
         return $img_word;
     }
 
+    /**
+     * Разбивает рисунок с текстом на маленькие рисунки с символом
+     * @param resource $img
+     * @return array
+     */
+    static function divide_to_char($img)
+    {
+        $img_word=self::divide_to_word($img);
+        $img_char=array();
+        foreach ($img_word as $word_value)
+        {
+            $img_info['x']=imagesx($word_value);
+            $img_info['y']=imagesy($word_value);
+            $coordinates=self::coordinates_img($word_value,true,1);
+            $begin_char=$coordinates['start'];
+            $end_word=$coordinates['end'];
+            // Нарезаем на слова
+            foreach ($begin_char as $begin_key => $begin_value)
+            {
+                $img_char[]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
+                end($img_char);
+                $key_array_word=key($img_char);
+                $white=imagecolorallocate($img_char[$key_array_word], 255, 255, 255);
+                imagefill($img_char[$key_array_word], 0, 0, $white);
+                imagecopy($img_char[$key_array_word],$word_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+            }
+        }
+        return $img_char;
+    }
+
+    /**
+     * Поиск точек разделения изображения
+     * @param resource $img Изображения для вычесления строк
+     * @param bool $rotate Поворачивать изображени или нет
+     * @param int $border Размер границы одной части текста до другой
+     * @return array координаты для обрезания
+     */
+    static function coordinates_img($img,$rotate=false,$border=2)
+    {
+        if($rotate)
+        {
+            $white=imagecolorallocate($img, 255, 255, 255);
+            $img=imagerotate($img , 270 , $white);
+        }
+        // Находим среднее значение яркости каждой пиксельной строки и всего рисунка
+        $brightness_lines=array();
+        $brightness_img=0;
+        $bold_img=self::bold_text($img,'width');
+        $colors_index_bold=self::get_colors_index($bold_img);
+        $colors_index=self::get_colors_index($img);
+        $img_info['x']=imagesx($bold_img);
+        $img_info['y']=imagesy($bold_img);
+        for($y=0;$y<$img_info['y'];$y++)
+        {
+            $brightness_lines[$y]=0;
+            $brightness_lines_normal[$y]=0;
+            for($x=0;$x<$img_info['x'];$x++)
+            {
+                $brightness_lines[$y]+=self::get_brightness_to_index($colors_index_bold['pix'][$x][$y],$bold_img);
+                $brightness_lines_normal[$y]+=self::get_brightness_to_index($colors_index['pix'][$x][$y],$img);
+            }
+            $brightness_lines[$y]/=$img_info['x'];
+            $brightness_img+=$brightness_lines_normal[$y]/$img_info['x'];
+        }
+        $brightness_img/=$img_info['y'];
+        $coordinates['start']=array();
+        $coordinates['end']=array();
+        //Находим все верхние и нижние границы строк текста
+        for($y=$border;$y<$img_info['y']-$border;$y++)
+        {
+            //Top
+            if( $brightness_lines[$y-$border]>$brightness_img &&
+                ($brightness_lines[$y-($border-1)]>$brightness_img || $border==1) &&
+                $brightness_lines[$y]>$brightness_img &&
+                ($brightness_lines[$y+($border-1)]<$brightness_img || $border==1) &&
+                $brightness_lines[$y+$border]<$brightness_img
+            )
+                $coordinates['start'][]=$y;
+            //Bottom
+            elseif($brightness_lines[$y-$border]<$brightness_img &&
+                ($brightness_lines[$y-($border-1)]<$brightness_img || $border==1) &&
+                $brightness_lines[$y]>$brightness_img &&
+                ($brightness_lines[$y+($border-1)]>$brightness_img || $border==1) &&
+                $brightness_lines[$y+$border]>$brightness_img
+            )
+                $coordinates['end'][]=$y;
+            elseif($brightness_lines[$y-$border]<$brightness_img &&
+                $brightness_lines[$y]>$brightness_img &&
+                $brightness_lines[$y+$border]<$brightness_img &&
+                $border==1
+            )
+            {
+                $coordinates['start'][]=$y;
+                $coordinates['end'][]=$y;
+            }
+        }
+        return $coordinates;
+    }
     /**
      * Вычисляем яркость цвета по его индексу
      * @param int $color_index
@@ -363,7 +373,7 @@ class c_ocr
         $blur_img=imagecreatetruecolor($img_info['x'],$img_info['y']);
         imagecopy($blur_img, $img, 0, 0, 0, 0, $img_info['x'], $img_info['y']);
         $black=imagecolorallocate($blur_img, 0, 0, 0);
-        $bold_size=5; //Величина утолщения
+        $bold_size=10; //Величина утолщения
         for($x=0;$x<$img_info['x'];$x++)
         {
             for($y=0;$y<$img_info['y'];$y++)
