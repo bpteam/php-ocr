@@ -227,7 +227,7 @@ class c_ocr
     {
         $img_line=self::divide_to_line($img);
         $img_word=array();
-        foreach ($img_line as $line_value)
+        foreach ($img_line as $line_key => $line_value)
         {
             $img_info['x']=imagesx($line_value);
             $img_info['y']=imagesy($line_value);
@@ -237,12 +237,12 @@ class c_ocr
             // Нарезаем на слова
             foreach ($begin_word as $begin_key => $begin_value)
             {
-                $img_word[]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
-                end($img_word);
-                $key_array_word=key($img_word);
-                $white=imagecolorallocate($img_word[$key_array_word], 255, 255, 255);
-                imagefill($img_word[$key_array_word], 0, 0, $white);
-                imagecopy($img_word[$key_array_word],$line_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+                $img_word[$line_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
+                end($img_word[$line_key]);
+                $key_array_word=key($img_word[$line_key]);
+                $white=imagecolorallocate($img_word[$line_key][$key_array_word], 255, 255, 255);
+                imagefill($img_word[$line_key][$key_array_word], 0, 0, $white);
+                imagecopy($img_word[$line_key][$key_array_word],$line_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
             }
         }
         return $img_word;
@@ -257,22 +257,25 @@ class c_ocr
     {
         $img_word=self::divide_to_word($img);
         $img_char=array();
-        foreach ($img_word as $word_value)
+        foreach ($img_word as $line_key => $line_value)
         {
-            $img_info['x']=imagesx($word_value);
-            $img_info['y']=imagesy($word_value);
-            $coordinates=self::coordinates_img($word_value,true,1);
-            $begin_char=$coordinates['start'];
-            $end_word=$coordinates['end'];
-            // Нарезаем на слова
-            foreach ($begin_char as $begin_key => $begin_value)
+            foreach ($line_value as $word_key => $word_value)
             {
-                $img_char[]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
-                end($img_char);
-                $key_array_word=key($img_char);
-                $white=imagecolorallocate($img_char[$key_array_word], 255, 255, 255);
-                imagefill($img_char[$key_array_word], 0, 0, $white);
-                imagecopy($img_char[$key_array_word],$word_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+                $img_info['x']=imagesx($word_value);
+                $img_info['y']=imagesy($word_value);
+                $coordinates=self::coordinates_img($word_value,true,1);
+                $begin_char=$coordinates['start'];
+                $end_word=$coordinates['end'];
+                // Нарезаем на слова
+                foreach ($begin_char as $begin_key => $begin_value)
+                {
+                    $img_char[$line_key][$word_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value, $img_info['y']);
+                    end($img_char[$line_key][$word_key]);
+                    $key_array_word=key($img_char[$line_key][$word_key]);
+                    $white=imagecolorallocate($img_char[$line_key][$word_key][$key_array_word], 255, 255, 255);
+                    imagefill($img_char[$line_key][$word_key][$key_array_word], 0, 0, $white);
+                    imagecopy($img_char[$line_key][$word_key][$key_array_word],$word_value,0,0,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+                }
             }
         }
         return $img_char;
@@ -382,18 +385,35 @@ class c_ocr
                 {
                     switch ($b_type)
                     {
-                        case 'width':
-                            imagefilledrectangle($blur_img,$x-$bold_size,$y,$x+$bold_size,$y,$black);
+                        case 'width': imagefilledrectangle($blur_img,$x-$bold_size,$y,$x+$bold_size,$y,$black);
                             break;
-                        case 'height':
-                            imagefilledrectangle($blur_img,$x,$y-$bold_size,$x,$y+$bold_size,$black);
+                        case 'height': imagefilledrectangle($blur_img,$x,$y-$bold_size,$x,$y+$bold_size,$black);
                             break;
-                        default:
-                            break;
+                        default: break;
                     }
                 }
             }
         }
         return $blur_img;
+    }
+
+    /**
+     * Прапорциональное изменение размера изображения
+     * @param resource $img изображение
+     * @param int $w ширина
+     * @param int $h высота
+     * @return resource
+     */
+    static function resize_img($img,$w,$h)
+    {
+        $img_info['x']=imagesx($img);
+        $img_info['y']=imagesy($img);
+        $new_img=imagecreatetruecolor($w,$h);
+        $white=imagecolorallocate($new_img, 255, 255, 255);
+        imagefill($new_img, 0, 0, $white);
+        if ($img_info['x']<$img_info['y'])$w=$img_info['x']*($h/$img_info['y']);
+        else $h=$img_info['y']*($w/$img_info['x']);
+        imagecopyresampled($new_img, $img, 0, 0, 0, 0, $w, $h, $img_info['x'], $img_info['y']);
+        return $new_img;
     }
 }
