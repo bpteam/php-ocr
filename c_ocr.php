@@ -1,8 +1,10 @@
 <?php
 namespace php_ocr\c_ocr;
 
+//
 /**
  * Class c_ocr
+ * Класс для распознования символов по шаблону
  * @package php_ocr\c_ocr
  */
 class c_ocr
@@ -13,58 +15,24 @@ class c_ocr
      */
     public static $img;
     /**
-     * Массив с нарезаными строками текста
-     * @var array
-     */
-    public static $img_line;
-    /**
-     * Массив рисунков символов для распознования
-     * @var array array(GD)
-     */
-    public static $img_char;
-    /**
-     * Массив шаблонов символов для распознования
-     * @var array array(GD)
-     */
-    public static $img_char_templates;
-
-    /**
-     * Хранит информацию о изображении
-     * [0] ширина
-     * [1] высота
-     * [2] Тип рисунка png jpeg gif
-     * @var array Массив полученый через функцию getimagesize
-     */
-    public static $img_info;
-
-    /**
-     * [pix][X][Y]=Значение индекса цвета в пикселе XxY в изображении
-     * ['index'][index]=Количество цветов с таким индексом
-     * ['count_pix']=Количество пикселей в изображении
-     * ['percent'][index]= Процентное соотношение цветов на изображении
-     * @var array
-     */
-    public static $colors_index;
-
-    /**
      * @param string $img_file Имя файла с исображением
      * @return bool|resource
      */
     static function open_img($img_file)
     {
-        self::$img_info=getimagesize($img_file);
+        $img_info=getimagesize($img_file);
         //Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
-        self::$img = imagecreatetruecolor(self::$img_info[0]+4, self::$img_info[1]+4);
+        self::$img = imagecreatetruecolor($img_info[0]+4, $img_info[1]+4);
         $white=imagecolorallocate(self::$img, 255, 255, 255);
         imagefill(self::$img, 0, 0, $white);
-        switch(self::$img_info[2])
+        switch($img_info[2])
         {
             case IMAGETYPE_PNG :
                 $tmp_img2=imagecreatefrompng($img_file);
-                $tmp_img=imagecreatetruecolor(self::$img_info[0], self::$img_info[1]);
+                $tmp_img=imagecreatetruecolor($img_info[0], $img_info[1]);
                 $white=imagecolorallocate($tmp_img, 255, 255, 255);
                 imagefill($tmp_img, 0, 0, $white);
-                imagecopy($tmp_img, $tmp_img2, 0, 0, 0, 0, self::$img_info[0], self::$img_info[1]);
+                imagecopy($tmp_img, $tmp_img2, 0, 0, 0, 0, $img_info[0], $img_info[1]);
                 imagedestroy($tmp_img2);
                 break;
             case IMAGETYPE_JPEG :
@@ -83,7 +51,7 @@ class c_ocr
                 break;
         }
         $tmp_img=self::check_background_brightness($tmp_img);
-        imagecopy(self::$img, $tmp_img, 2, 2, 0, 0, self::$img_info[0], self::$img_info[1]);
+        imagecopy(self::$img, $tmp_img, 2, 2, 0, 0, $img_info[0], $img_info[1]);
         return self::$img;
     }
 
@@ -453,26 +421,37 @@ class c_ocr
         return $img;
     }
 
-    static function generate_template_char($img,$w=16,$h=16)
+    /**
+     * Генерация шаблона из одного символа
+     * @param resource $img
+     * @param int $w
+     * @param int $h
+     * @return string
+     */
+    static function generate_template_char($img,$w=15,$h=16)
     {
         $img_info['x']=imagesx($img);
         $img_info['y']=imagesy($img);
         if($img_info['x']!=$w || $img_info['y']!=$h) $img=self::resize_img($img,$w,$h);
         $color_indexes=self::get_colors_index_text_and_background($img);
-        $template_char=array();
-        for($y=0;$y<16;$y++)
+        $line='';
+        for($y=0;$y<$h;$y++)
         {
-            $line='';
-            for($x=0;$x<16;$x++)
+            for($x=0;$x<$w;$x++)
             {
                 if(array_search(imagecolorat($img,$x,$y),$color_indexes['text'])!==false) $line.='1';
                 else $line.='0';
             }
-            $template_char[]=$line;
         }
-        return $template_char;
+        return $line;
     }
 
+    /**
+     * Генерация шаблона для распознования
+     * @param array $chars Массив string из символов в последовательности как на картинках
+     * @param array $imgs Массив resource из изображений для создания шаблона
+     * @return array|bool
+     */
     static function generate_template($chars,$imgs)
     {
         if(count($chars)!=count($imgs)) return false;
@@ -481,17 +460,69 @@ class c_ocr
         return $tamplate;
     }
 
+    /**
+     * Сохранение шаблона в файл
+     * @param string $name Имя файла
+     * @param array $template шаблон
+     */
     static function save_template($name,$template)
     {
         $json=json_encode($template,JSON_FORCE_OBJECT);
-        $fh=fopen($name,'w+');
+        $fh=fopen($name,'w');
         fwrite($fh,$json);
         fclose($fh);
     }
 
+    /**
+     * Загрузка шаблона из файла
+     * @param string $name имя фала
+     * @return array|bool
+     */
     static function load_template($name)
     {
         $json=file_get_contents($name);
-        return json_encode($json,true);
+        return json_decode($json,true);
+    }
+
+    /**
+     * Распознование символа по шаблону
+     * @param resource $img
+     * @param array $template
+     * @return int|string
+     */
+    static function define_char($img,$template)
+    {
+        $template_char=self::generate_template_char($img);
+        foreach ($template as $key => $value)
+        {
+            $difference=levenshtein($template_char,$value);
+            if($difference<strlen($template_char)/10) return $key;
+        }
+        return "?";
+    }
+
+    /**
+     * Распознование текста на изображении
+     * @param resource $img
+     * @param array $template
+     * @return string
+     */
+    static function define_img($img,$template)
+    {
+        $imgs=self::divide_to_char($img);
+        $text='';
+        foreach ($imgs as $line)
+        {
+            foreach ($line as $word)
+            {
+                foreach ($word as $char)
+                {
+                    $text.=c_ocr::define_char($char,$template);
+                }
+                if(count($word)>1) $text.=" ";
+            }
+            if(count($line)>1) $text.="\n";
+        }
+        return trim($text);
     }
 }
