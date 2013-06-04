@@ -17,7 +17,7 @@ c_ocr::open_img($file_name);
 //Исходное изображение
 echo "<br>Step 0 src img<br>";
 show_pic(c_ocr::$img,$ex,100);
-/*
+
 //Перый шаг: Разрезаем на строчки
 $img=c_ocr::divide_to_line(c_ocr::$img);
 echo "<br>Step 1 divide_to_line<br>";
@@ -26,7 +26,7 @@ show_pic($img,$ex,200);
 $img=c_ocr::divide_to_word(c_ocr::$img);
 echo "<br>Step 2 divide_to_word<br>";
 show_pic($img,$ex,300);
-*/
+
 //Третий шаг: Разрезаем на символы
 $img=c_ocr::divide_to_char(c_ocr::$img);
 echo "<br>Step 3 divide_char<br>";
@@ -49,7 +49,7 @@ foreach ($img as $line)
 
 //Пятый шаг: Генерация шаблона в json сохранение и загрузка шаблона
 echo "<br>Step 5 generate_template_char,save_template,load_template<br>";
-$template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9',','),$imgs);
+$template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9',',','-'),$imgs);
 $name="../template/slando.json";
 c_ocr::save_template($name,$template);
 $template=c_ocr::load_template($name);

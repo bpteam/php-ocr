@@ -249,8 +249,8 @@ class c_ocr
                     imagefill($tmp_img, 0, 0, $white);
                     imagecopy($tmp_img,$word_value,0,0,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
                     $w=imagesx($tmp_img);
-                    $coordinates_char=self::coordinates_img($tmp_img);
-                    $img_char[$line_key][$word_key][]=imagecreatetruecolor($w, $coordinates_char['end'][0]-$coordinates_char['start'][0]);
+                    $coordinates_char=self::coordinates_img($tmp_img,false,1);
+                    $img_char[$line_key][$word_key][]=imagecreatetruecolor($w,$coordinates_char['end'][0]-$coordinates_char['start'][0]);
                     end($img_char[$line_key][$word_key]);
                     $key_array_word=key($img_char[$line_key][$word_key]);
                     $white=imagecolorallocate($img_char[$line_key][$word_key][$key_array_word], 255, 255, 255);
