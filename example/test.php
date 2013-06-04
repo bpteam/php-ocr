@@ -49,8 +49,8 @@ foreach ($img as $line)
 
 //Пятый шаг: Генерация шаблона в json сохранение и загрузка шаблона
 echo "<br>Step 5 generate_template_char,save_template,load_template<br>";
-$template=c_ocr::generate_template(range(0,9),$imgs);
-$name="../template/test.json";
+$template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9',','),$imgs);
+$name="../template/slando.json";
 c_ocr::save_template($name,$template);
 $template=c_ocr::load_template($name);
 
@@ -72,6 +72,14 @@ $text=c_ocr::define_img(c_ocr::$img,$template);
 echo $text."<br>";
 
 $file_name="../template/test_img/test9.".$ex;
+c_ocr::open_img($file_name);
+show_pic(c_ocr::$img,$ex,100);
+//Шестой шаг: распознование изображения
+echo "<br>Step 6 define_img<br>";
+$text=c_ocr::define_img(c_ocr::$img,$template);
+echo $text."<br>";
+
+$file_name="../template/test_img/test0.".$ex;
 c_ocr::open_img($file_name);
 show_pic(c_ocr::$img,$ex,100);
 //Шестой шаг: распознование изображения
