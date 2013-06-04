@@ -20,19 +20,15 @@ class c_ocr
      */
     static function open_img($img_file)
     {
-        $img_info=getimagesize($img_file);
-        //Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
-        self::$img = imagecreatetruecolor($img_info[0]+4, $img_info[1]+4);
-        $white=imagecolorallocate(self::$img, 255, 255, 255);
-        imagefill(self::$img, 0, 0, $white);
-        switch($img_info[2])
+        $info=@getimagesize($img_file);
+        switch($info[2])
         {
             case IMAGETYPE_PNG :
                 $tmp_img2=imagecreatefrompng($img_file);
-                $tmp_img=imagecreatetruecolor($img_info[0], $img_info[1]);
+                $tmp_img=imagecreatetruecolor($info[0], $info[1]);
                 $white=imagecolorallocate($tmp_img, 255, 255, 255);
                 imagefill($tmp_img, 0, 0, $white);
-                imagecopy($tmp_img, $tmp_img2, 0, 0, 0, 0, $img_info[0], $img_info[1]);
+                imagecopy($tmp_img, $tmp_img2, 0, 0, 0, 0, $info[0], $info[1]);
                 imagedestroy($tmp_img2);
                 break;
             case IMAGETYPE_JPEG :
@@ -50,6 +46,12 @@ class c_ocr
                 }
                 break;
         }
+        $img_info[0]=imagesx($tmp_img);
+        $img_info[1]=imagesy($tmp_img);
+        //Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
+        self::$img = imagecreatetruecolor($img_info[0]+4, $img_info[1]+4);
+        $white=imagecolorallocate(self::$img, 255, 255, 255);
+        imagefill(self::$img, 0, 0, $white);
         $tmp_img=self::check_background_brightness($tmp_img);
         imagecopy(self::$img, $tmp_img, 2, 2, 0, 0, $img_info[0], $img_info[1]);
         return self::$img;
