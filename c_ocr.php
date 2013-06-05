@@ -14,6 +14,12 @@ class c_ocr
      * @var resource
      */
     public static $img;
+
+    /**
+     * Добавляет к краям изображения количество пикселей для избежания края изображения
+     * @var int
+     */
+    public static $add_size;
     /**
      * @param string $img_file Имя файла с исображением
      * @return bool|resource
@@ -21,6 +27,7 @@ class c_ocr
     static function open_img($img_file)
     {
         $info=@getimagesize($img_file);
+        self::$add_size=6;
         switch($info[2])
         {
             case IMAGETYPE_PNG :
@@ -38,22 +45,28 @@ class c_ocr
                 $tmp_img = imagecreatefromgif($img_file);
                 break;
             default:
-                switch(true)
+                if($tmp_img2 = @imagecreatefromstring($img_file))
                 {
-                    case $tmp_img = @imagecreatefromstring($img_file): break;
-                    case $tmp_img = @imagecreatefromgd($img_file): break;
-                    default: return false;
+                    $info[0]=imagesx($tmp_img2);
+                    $info[1]=imagesy($tmp_img2);
+                    $tmp_img=imagecreatetruecolor($info[0], $info[1]);
+                    $white=imagecolorallocate($tmp_img, 255, 255, 255);
+                    imagefill($tmp_img, 0, 0, $white);
+                    imagecopy($tmp_img, $tmp_img2, 0, 0, 0, 0, $info[0], $info[1]);
+                    imagedestroy($tmp_img2);
                 }
+                elseif($tmp_img = @imagecreatefromgd($img_file));
+                else return false;
                 break;
         }
         $img_info[0]=imagesx($tmp_img);
         $img_info[1]=imagesy($tmp_img);
         //Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
-        self::$img = imagecreatetruecolor($img_info[0]+4, $img_info[1]+4);
+        self::$img = imagecreatetruecolor($img_info[0]+self::$add_size, $img_info[1]+self::$add_size);
         $white=imagecolorallocate(self::$img, 255, 255, 255);
         imagefill(self::$img, 0, 0, $white);
         $tmp_img=self::check_background_brightness($tmp_img);
-        imagecopy(self::$img, $tmp_img, 2, 2, 0, 0, $img_info[0], $img_info[1]);
+        imagecopy(self::$img, $tmp_img, self::$add_size/2, self::$add_size/2, 0, 0, $img_info[0], $img_info[1]);
         return self::$img;
     }
 
@@ -175,20 +188,20 @@ class c_ocr
         }
 
         // Увеличим все строки на треть самой маленькой для захвата заглавных букв м хвостов букв
-        $change_size=0.3*$h_min;
+        $change_size=0.2*$h_min;
         foreach ($top_line as $key => $value)
         {
-            $top_line[$key]-=$change_size;
-            $bottom_line[$key]+=$change_size;
+            if(($top_line[$key]-$change_size)>=0) $top_line[$key]-=$change_size;
+            if(($bottom_line[$key]+$change_size)<=($img_info['y']-1))$bottom_line[$key]+=$change_size;
         }
         // Нарезаем на полоски с текстом
         $img_line=array();
         foreach ($top_line as $key => $value)
         {
-            $img_line[$key]=imagecreatetruecolor($img_info['x']+4, $bottom_line[$key]-$top_line[$key]+4);
+            $img_line[$key]=imagecreatetruecolor($img_info['x']+self::$add_size, $bottom_line[$key]-$top_line[$key]+self::$add_size);
             $white=imagecolorallocate($img_line[$key], 255, 255, 255);
             imagefill($img_line[$key], 0, 0, $white);
-            imagecopy($img_line[$key],$img,2,2,0,$top_line[$key],$img_info['x'],$bottom_line[$key]-$top_line[$key]);
+            imagecopy($img_line[$key],$img,self::$add_size/2,self::$add_size/2,0,$top_line[$key],$img_info['x'],$bottom_line[$key]-$top_line[$key]);
         }
         return $img_line;
     }
@@ -212,12 +225,12 @@ class c_ocr
             // Нарезаем на слова
             foreach ($begin_word as $begin_key => $begin_value)
             {
-                $img_word[$line_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+4, $img_info['y']+4);
+                $img_word[$line_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+self::$add_size, $img_info['y']+self::$add_size);
                 end($img_word[$line_key]);
                 $key_array_word=key($img_word[$line_key]);
                 $white=imagecolorallocate($img_word[$line_key][$key_array_word], 255, 255, 255);
                 imagefill($img_word[$line_key][$key_array_word], 0, 0, $white);
-                imagecopy($img_word[$line_key][$key_array_word],$line_value,2,2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+                imagecopy($img_word[$line_key][$key_array_word],$line_value,self::$add_size/2,self::$add_size/2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
             }
         }
         return $img_word;
@@ -498,7 +511,7 @@ class c_ocr
         foreach ($template as $key => $value)
         {
             $difference=levenshtein($template_char,$value);
-            if($difference<strlen($template_char)/10) return $key;
+            if($difference<strlen($template_char)/15) return $key;
         }
         return "?";
     }

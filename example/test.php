@@ -11,12 +11,12 @@ use php_ocr\c_ocr\c_ocr as c_ocr;
 $startMem=memory_get_usage()/1024;
 $startTime=microtime(true);
 require_once "../c_ocr.php";
-$file_name='../template/test_img/template_img.png';
+$file_name='../template/test_img/torg.png';
 $ex="png";
-c_ocr::open_img($file_name);
+$img=c_ocr::open_img($file_name);
 //Исходное изображение
 echo "<br>Step 0 src img<br>";
-show_pic(c_ocr::$img,$ex,100);
+show_pic($img,$ex,100);
 
 //Перый шаг: Разрезаем на строчки
 $img=c_ocr::divide_to_line(c_ocr::$img);
@@ -32,6 +32,7 @@ $img=c_ocr::divide_to_char(c_ocr::$img);
 echo "<br>Step 3 divide_char<br>";
 show_pic($img,$ex,400);
 //Четвертый шаг: Генерация шаблона символа
+$imgs=array();
 echo "<br>Step 4 generate_template_char<br>";
 foreach ($img as $line)
 {
@@ -40,48 +41,62 @@ foreach ($img as $line)
         foreach ($word as $char)
         {
             $imgs[]=$char; //Собирается для следующего шага
-            //echo "<br>";
             $tamplate_char=c_ocr::generate_template_char($char);
-           //echo $tamplate_char."<br>";
         }
     }
 }
 
 //Пятый шаг: Генерация шаблона в json сохранение и загрузка шаблона
 echo "<br>Step 5 generate_template_char,save_template,load_template<br>";
-$template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9',',','-'),$imgs);
-$name="../template/slando.json";
+$template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9','-'),$imgs);
+$name="../template/torg.json";
 c_ocr::save_template($name,$template);
 $template=c_ocr::load_template($name);
 
 //Проверка распознования
-$file_name="../template/test_img/test7.".$ex;
-c_ocr::open_img($file_name);
-show_pic(c_ocr::$img,$ex,100);
+$file_name="../template/test_img/torg.".$ex;
+//$file_name="../template/test_img/slando.".$ex;
+$img=c_ocr::open_img($file_name);
+show_pic($img,$ex,100);
 //Шестой шаг: распознование изображения
 echo "<br>Step 6 define_img<br>";
 $text=c_ocr::define_img(c_ocr::$img,$template);
 echo $text."<br>";
 
-$file_name="../template/test_img/test8.".$ex;
-c_ocr::open_img($file_name);
-show_pic(c_ocr::$img,$ex,100);
+$file_name="../template/test_img/torg1.".$ex;
+//$file_name="../template/test_img/slando1.".$ex;
+$img=c_ocr::open_img($file_name);
+show_pic($img,$ex,100);
+//Перый шаг: Разрезаем на строчки
+$img=c_ocr::divide_to_line(c_ocr::$img);
+echo "<br>Step 1 divide_to_line<br>";
+show_pic($img,$ex,200);
+//Второй шаг: Разрезаем на слова
+$img=c_ocr::divide_to_word(c_ocr::$img);
+echo "<br>Step 2 divide_to_word<br>";
+show_pic($img,$ex,300);
+//Третий шаг: Разрезаем на символы
+$img=c_ocr::divide_to_char(c_ocr::$img);
+echo "<br>Step 3 divide_char<br>";
+show_pic($img,$ex,400);
 //Шестой шаг: распознование изображения
 echo "<br>Step 6 define_img<br>";
 $text=c_ocr::define_img(c_ocr::$img,$template);
 echo $text."<br>";
 
-$file_name="../template/test_img/test9.".$ex;
-c_ocr::open_img($file_name);
-show_pic(c_ocr::$img,$ex,100);
+$file_name="../template/test_img/torg2.".$ex;
+//$file_name="../template/test_img/test7.".$ex;
+$img=c_ocr::open_img($file_name);
+show_pic($img,$ex,100);
 //Шестой шаг: распознование изображения
 echo "<br>Step 6 define_img<br>";
 $text=c_ocr::define_img(c_ocr::$img,$template);
 echo $text."<br>";
 
-$file_name="../template/test_img/test0.".$ex;
-c_ocr::open_img($file_name);
-show_pic(c_ocr::$img,$ex,100);
+$file_name="../template/test_img/torg3.".$ex;
+//$file_name="../template/test_img/test0.".$ex;
+$img=c_ocr::open_img($file_name);
+show_pic($img,$ex,100);
 //Шестой шаг: распознование изображения
 echo "<br>Step 6 define_img<br>";
 $text=c_ocr::define_img(c_ocr::$img,$template);
