@@ -510,12 +510,23 @@ class c_ocr
         $template_char=self::generate_template_char($img);
         foreach ($template as $key => $value)
         {
-            $difference=levenshtein($template_char,$value);
-            if($difference<strlen($template_char)/15) return $key;
+            if(self::compare_char($template_char,$value)) return $key;
         }
         return "?";
     }
 
+    /**
+     * Сравнивает шаблоны символов на похожесть
+     * @param string $char1 символ 1 в виде шаблона
+     * @param string $char2 символ 1 в виде шаблона
+     * @return bool
+     */
+    static function compare_char($char1,$char2)
+    {
+        $difference=levenshtein($char1,$char2);
+        if($difference<strlen($char1)*0.1) return true;// Разница на количество символов в строке в процентах изменяется похожесть символа
+        else return false;
+    }
     /**
      * Распознование текста на изображении
      * @param resource $img
@@ -539,5 +550,35 @@ class c_ocr
             if(count($line)>1) $text.="\n";
         }
         return trim($text);
+    }
+
+    /**
+     * Находит уникальные символы в массиве символов
+     * @param array $imgs Масси изображений символов
+     * @return array Массив изображений уникальных символов
+     */
+    static function find_unique_char($imgs)
+    {
+        $template_chars=array();
+        foreach ($imgs as $key => $value)
+        {
+            $template_chars[$key]=self::generate_template_char($value);
+        }
+        $template_chars=array_unique($template_chars);
+        //$clone=$template_chars;
+        $clone_key=array();
+        foreach ($template_chars as $key => $value)
+        {
+            foreach($template_chars as $tmp_key => $tmp_value)
+                if(self::compare_char($value,$tmp_value) && $key<$tmp_key) $clone_key[$tmp_key]='';
+        }
+        foreach ($clone_key as $key => $value) unset($template_chars[$key]);
+
+        $new_imgs=array();
+        foreach ($template_chars as $key => $value)
+        {
+            $new_imgs[]=$imgs[$key];
+        }
+        return $new_imgs;
     }
 }
