@@ -477,12 +477,13 @@ class c_ocr
 
     /**
      * Сохранение шаблона в файл
-     * @param string $name Имя файла
+     * @param string $name Имя шаблона
      * @param array $template шаблон
      */
     static function save_template($name,$template)
     {
         $json=json_encode($template,JSON_FORCE_OBJECT);
+        $name=dirname(__FILE__).'/template/'.$name.'.json';
         $fh=fopen($name,'w');
         fwrite($fh,$json);
         fclose($fh);
@@ -490,11 +491,12 @@ class c_ocr
 
     /**
      * Загрузка шаблона из файла
-     * @param string $name имя фала
+     * @param string $name имя шаблона
      * @return array|bool
      */
     static function load_template($name)
     {
+        $name=dirname(__FILE__).'/template/'.$name.'.json';
         $json=file_get_contents($name);
         return json_decode($json,true);
     }

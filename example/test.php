@@ -49,9 +49,9 @@ foreach ($img as $line)
 //Пятый шаг: Генерация шаблона в json сохранение и загрузка шаблона
 echo "<br>Step 5 generate_template_char,save_template,load_template<br>";
 $template=c_ocr::generate_template(array('0','1','2','3','4','5','6','7','8','9','-'),$imgs);
-$name="../template/torg.json";
+$name="torg";
 c_ocr::save_template($name,$template);*/
-$name="../template/torg.json";
+$name="torg";
 $template=c_ocr::load_template($name);
 
 //Проверка распознования
