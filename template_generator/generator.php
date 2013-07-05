@@ -20,15 +20,17 @@ $pic_file[]='../template/test_img/slando.png';
 $pic_file[]='../template/test_img/slando1.png';
 */
    // /*
-$template_name='torg';
-$pic_file[]='../template/test_img/torg.png';
-$pic_file[]='../template/test_img/torg1.png';
-$pic_file[]='../template/test_img/torg2.png';
-$pic_file[]='../template/test_img/torg3.png';
-$pic_file[]='../template/test_img/torg4.png';
-$pic_file[]='../template/test_img/torg5.png';
-$pic_file[]='../template/test_img/torg6.png';
-  // */
+$template_name='slando';
+$pic_file[]='../template/test_img/'.$template_name.'.png';
+$pic_file[]='../template/test_img/'.$template_name.'1.png';
+/*
+$pic_file[]='../template/test_img/'.$template_name.'2.png';
+$pic_file[]='../template/test_img/'.$template_name.'3.png';
+$pic_file[]='../template/test_img/'.$template_name.'4.png';
+$pic_file[]='../template/test_img/'.$template_name.'5.png';
+$pic_file[]='../template/test_img/'.$template_name.'6.png';
+$pic_file[]='../template/test_img/'.$template_name.'7.png';
+ */
 $char_array=array();
 foreach ($pic_file as $key => $value)
 {
