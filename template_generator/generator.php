@@ -19,18 +19,19 @@ chdir(dirname(__FILE__));
 $pic_file[]='../template/test_img/slando.png';
 $pic_file[]='../template/test_img/slando1.png';
 */
-   // /*
-$template_name='slando';
+
+$template_name='torg';
 $pic_file[]='../template/test_img/'.$template_name.'.png';
 $pic_file[]='../template/test_img/'.$template_name.'1.png';
-/*
+// /*
 $pic_file[]='../template/test_img/'.$template_name.'2.png';
 $pic_file[]='../template/test_img/'.$template_name.'3.png';
 $pic_file[]='../template/test_img/'.$template_name.'4.png';
 $pic_file[]='../template/test_img/'.$template_name.'5.png';
 $pic_file[]='../template/test_img/'.$template_name.'6.png';
 $pic_file[]='../template/test_img/'.$template_name.'7.png';
- */
+$pic_file[]='../template/test_img/'.$template_name.'8.png';
+// */
 $char_array=array();
 foreach ($pic_file as $key => $value)
 {
@@ -42,7 +43,7 @@ $char=array();
     foreach($char_array as $value_img) foreach ($value_img as $value_line) foreach($value_line as $value_char) $char[]=$value_char;
     $char_array=c_ocr::find_unique_char($char);
 ?>
-    Введите символы на изображениях в текстовые поля(одинаковые можно не заполнять):<br/>
+    Введите символы на изображениях в текстовые поля:<br/>
     <form method="POST" action="">
 <?php
 foreach ($char_array as $key => $value)
