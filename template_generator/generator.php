@@ -36,6 +36,7 @@ $char_array=array();
 foreach ($pic_file as $key => $value)
 {
     $img=c_ocr::open_img($value);
+    c_ocr::set_infelicity(10);
     $tmp_img_array=c_ocr::divide_to_char($img);
     if(is_array($tmp_img_array)) $char_array=array_merge($char_array,$tmp_img_array);
 }

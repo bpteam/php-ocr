@@ -16,10 +16,16 @@ class c_ocr
     public static $img;
 
     /**
-     * Добавляет к краям изображения количество пикселей для избежания края изображения
+     * Добавляет к краям изображения количество пикселей для удобного разрезания
      * @var int
      */
-    public static $add_size;
+    private static $size_border = 6;
+
+    /**
+     * Погрешность в сравнении с шаблоном в процентах
+     * @var float
+     */
+    private static $infelicity = 10;
     /**
      * @param string $img_file Имя файла с исображением
      * @return bool|resource
@@ -27,7 +33,6 @@ class c_ocr
     static function open_img($img_file)
     {
         $info=@getimagesize($img_file);
-        self::$add_size=6;
         switch($info[2])
         {
             case IMAGETYPE_PNG :
@@ -62,11 +67,11 @@ class c_ocr
         $img_info[0]=imagesx($tmp_img);
         $img_info[1]=imagesy($tmp_img);
         //Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
-        self::$img = imagecreatetruecolor($img_info[0]+self::$add_size, $img_info[1]+self::$add_size);
+        self::$img = imagecreatetruecolor($img_info[0]+self::$size_border, $img_info[1]+self::$size_border);
         $white=imagecolorallocate(self::$img, 255, 255, 255);
         imagefill(self::$img, 0, 0, $white);
         $tmp_img=self::check_background_brightness($tmp_img);
-        imagecopy(self::$img, $tmp_img, self::$add_size/2, self::$add_size/2, 0, 0, $img_info[0], $img_info[1]);
+        imagecopy(self::$img, $tmp_img, self::$size_border/2, self::$size_border/2, 0, 0, $img_info[0], $img_info[1]);
         return self::$img;
     }
 
@@ -167,6 +172,26 @@ class c_ocr
         return $mid_color;
     }
 
+    public static function get_size_border()
+    {
+        return self::$size_border;
+    }
+
+    public static function set_size_botder($val)
+    {
+        self::$size_border = $val;
+    }
+
+    public static function get_infelicity()
+    {
+        return self::$infelicity;
+    }
+
+    public static function set_infelicity($val)
+    {
+        self::$infelicity = $val;
+    }
+
     /**
      * Разбивает рисунок на строки с текстом
      * @param resource $img
@@ -187,7 +212,7 @@ class c_ocr
             if($h_min>$h_line) $h_min=$h_line;
         }
 
-        // Увеличим все строки на треть самой маленькой для захвата заглавных букв м хвостов букв
+        // Увеличим все строки на пятую часть самой маленькой для захвата заглавных букв м хвостов букв
         $change_size=0.2*$h_min;
         foreach ($top_line as $key => $value)
         {
@@ -198,10 +223,10 @@ class c_ocr
         $img_line=array();
         foreach ($top_line as $key => $value)
         {
-            $img_line[$key]=imagecreatetruecolor($img_info['x']+self::$add_size, $bottom_line[$key]-$top_line[$key]+self::$add_size);
+            $img_line[$key]=imagecreatetruecolor($img_info['x']+self::$size_border, $bottom_line[$key]-$top_line[$key]+self::$size_border);
             $white=imagecolorallocate($img_line[$key], 255, 255, 255);
             imagefill($img_line[$key], 0, 0, $white);
-            imagecopy($img_line[$key],$img,self::$add_size/2,self::$add_size/2,0,$top_line[$key],$img_info['x'],$bottom_line[$key]-$top_line[$key]);
+            imagecopy($img_line[$key],$img,self::$size_border/2,self::$size_border/2,0,$top_line[$key],$img_info['x'],$bottom_line[$key]-$top_line[$key]);
         }
         return $img_line;
     }
@@ -225,12 +250,12 @@ class c_ocr
             // Нарезаем на слова
             foreach ($begin_word as $begin_key => $begin_value)
             {
-                $img_word[$line_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+self::$add_size, $img_info['y']+self::$add_size);
+                $img_word[$line_key][]=imagecreatetruecolor($end_word[$begin_key]-$begin_value+self::$size_border, $img_info['y']+self::$size_border);
                 end($img_word[$line_key]);
                 $key_array_word=key($img_word[$line_key]);
                 $white=imagecolorallocate($img_word[$line_key][$key_array_word], 255, 255, 255);
                 imagefill($img_word[$line_key][$key_array_word], 0, 0, $white);
-                imagecopy($img_word[$line_key][$key_array_word],$line_value,self::$add_size/2,self::$add_size/2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
+                imagecopy($img_word[$line_key][$key_array_word],$line_value,self::$size_border/2,self::$size_border/2,$begin_value,0,$end_word[$begin_key]-$begin_value,$img_info['y']);
             }
         }
         return $img_word;
@@ -526,7 +551,7 @@ class c_ocr
     static function compare_char($char1,$char2)
     {
         $difference=levenshtein($char1,$char2);
-        if($difference<strlen($char1)*0.1) return true;// Разница на количество символов в строке в процентах изменяется похожесть символа
+        if($difference<strlen($char1)*(self::$infelicity/100)) return true;// Разница на количество символов в строке в процентах изменяется похожесть символа
         else return false;
     }
     /**
