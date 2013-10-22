@@ -1,5 +1,5 @@
 <?php
-namespace php_ocr\c_ocr;
+namespace php_ocr;
 
 //
 /**

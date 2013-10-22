@@ -8,7 +8,7 @@
  * @author: Evgeny Pynykh bpteam22@gmail.com
  */
 
-use php_ocr\c_ocr\c_ocr as c_ocr;
+use php_ocr\c_ocr as c_ocr;
 set_time_limit(600);
 if(!isset($_POST['Submit1']))
 {
@@ -20,18 +20,10 @@ $pic_file[]='../template/test_img/slando.png';
 $pic_file[]='../template/test_img/slando1.png';
 */
 
-$template_name='torg';
-$pic_file[]='../template/test_img/'.$template_name.'.png';
-$pic_file[]='../template/test_img/'.$template_name.'1.png';
-// /*
-$pic_file[]='../template/test_img/'.$template_name.'2.png';
-$pic_file[]='../template/test_img/'.$template_name.'3.png';
-$pic_file[]='../template/test_img/'.$template_name.'4.png';
-$pic_file[]='../template/test_img/'.$template_name.'5.png';
-$pic_file[]='../template/test_img/'.$template_name.'6.png';
-$pic_file[]='../template/test_img/'.$template_name.'7.png';
-$pic_file[]='../template/test_img/'.$template_name.'8.png';
-// */
+$template_name='sl';
+for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
+	$pic_file[] = '../template/test_img/'.$template_name.$i.'.png';
+}
 $char_array=array();
 foreach ($pic_file as $key => $value)
 {
