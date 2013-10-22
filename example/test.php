@@ -7,11 +7,11 @@
  * Project: php_ocr
  * @author: Evgeny Pynykh bpteam22@gmail.com
  */
-use php_ocr\c_ocr\c_ocr as c_ocr;
+use php_ocr\c_ocr as c_ocr;
 $startMem=memory_get_usage()/1024;
 $startTime=microtime(true);
 require_once "../c_ocr.php";
-$file_name='../template/test_img/torg.png';
+$file_name='../template/test_img/torg1.png';
 $ex="png";
 $img=c_ocr::open_img($file_name);
 //Исходное изображение

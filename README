@@ -1,3 +1,6 @@
 Распознавание текста на изображении по шаблону
 
 Примеры использования находятся в ./example/test.php
+
+Extension:
+GD 2 http://libgd.bitbucket.org/

@@ -15,11 +15,6 @@ if(!isset($_POST['Submit1']))
 chdir(dirname(__FILE__));
 require_once '../c_ocr.php';
 chdir(dirname(__FILE__));
-/*
-$pic_file[]='../template/test_img/slando.png';
-$pic_file[]='../template/test_img/slando1.png';
-*/
-
 $template_name='sl';
 for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
 	$pic_file[] = '../template/test_img/'.$template_name.$i.'.png';
