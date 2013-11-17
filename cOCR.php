@@ -25,7 +25,7 @@ class cOCR
 	 * Погрешность в сравнении с шаблоном в процентах
 	 * @var float
 	 */
-	private static $infelicity = 10;
+	private static $infelicity = 20;
 
 	/**
 	 * @param string $imgFile Имя файла с исображением

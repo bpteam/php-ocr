@@ -45,18 +45,13 @@ foreach ($img as $line)
         }
     }
 }
-/*
-//Пятый шаг: Генерация шаблона в json сохранение и загрузка шаблона
-echo "<br>Step 5 generateTemplateChar,saveTemplate,loadTemplate<br>";
-$template=cOCR::generateTemplate(array('0','1','2','3','4','5','6','7','8','9','-'),$imgs);
-$name="torg";
-cOCR::saveTemplate($name,$template);*/
-$name="torg";
+
+$name="slando";
 $template=cOCR::loadTemplate($name);
 
 //Проверка распознования
-$file_name="../template/test_img/torg.".$ex;
-//$file_name="../template/test_img/slando.".$ex;
+//$file_name="../template/test_img/torg.".$ex;
+$file_name="../template/test_img/slando.".$ex;
 $img=cOCR::openImg($file_name);
 showPic($img,$ex,100);
 //Шестой шаг: распознование изображения

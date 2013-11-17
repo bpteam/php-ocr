@@ -31,7 +31,6 @@ $char=array();
     foreach($char_array as $value_img) foreach ($value_img as $value_line) foreach($value_line as $value_char) $char[]=$value_char;
     $char_array=cOCR::findUniqueChar($char);
 ?>
-    Введите символы на изображениях в текстовые поля:<br/>
     <form method="POST" action="">
 <?php
 foreach ($char_array as $key => $value)
@@ -44,7 +43,7 @@ foreach ($char_array as $key => $value)
     <?php
 }
 ?>
-    <input name='Submit1' type='submit' value='Генерировать'>
+    <input name='Submit1' type='submit' value='Gen'>
     </form>
     <?php
 }
