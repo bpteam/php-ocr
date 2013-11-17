@@ -4,16 +4,16 @@
  * User: EC
  * Date: 14.06.13
  * Time: 21:04
- * Project: php_ocr
+ * Project: phpOCR
  * @author: Evgeny Pynykh bpteam22@gmail.com
  */
 
-use php_ocr\c_ocr as c_ocr;
+use phpOCR\cOCR as cOCR;
 set_time_limit(600);
 if(!isset($_POST['Submit1']))
 {
 chdir(dirname(__FILE__));
-require_once '../c_ocr.php';
+require_once '../cOCR.php';
 chdir(dirname(__FILE__));
 $template_name='sl';
 for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
@@ -22,14 +22,14 @@ for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
 $char_array=array();
 foreach ($pic_file as $key => $value)
 {
-    $img=c_ocr::open_img($value);
-    c_ocr::set_infelicity(10);
-    $tmp_img_array=c_ocr::divide_to_char($img);
+    $img=cOCR::openImg($value);
+    cOCR::setInfelicity(10);
+    $tmp_img_array=cOCR::divideToChar($img);
     if(is_array($tmp_img_array)) $char_array=array_merge($char_array,$tmp_img_array);
 }
 $char=array();
     foreach($char_array as $value_img) foreach ($value_img as $value_line) foreach($value_line as $value_char) $char[]=$value_char;
-    $char_array=c_ocr::find_unique_char($char);
+    $char_array=cOCR::findUniqueChar($char);
 ?>
     Введите символы на изображениях в текстовые поля:<br/>
     <form method="POST" action="">
@@ -38,7 +38,7 @@ foreach ($char_array as $key => $value)
 {
     $name='./tmp/'.rand().microtime(true).'.png';
     imagepng($value,$name);
-    $tmp=c_ocr::generate_template_char($value);
+    $tmp=cOCR::generateTemplateChar($value);
     ?>
     <img src="<?php echo $name;?>"/><input type='text' name="template_<?php echo $tmp;?>" value=''/><br/>
     <?php
