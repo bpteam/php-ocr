@@ -505,7 +505,7 @@ class cOCR
 	 * @return bool
 	 */
 	static function compareChar($char1, $char2) {
-		$difference = levenshtein($char1, $char2);
+		$difference = levenshtein($char1, $char2); //TODO Попробовать similar_text
 		if ($difference < strlen($char1) * (self::$infelicity / 100)) return true; // Разница на количество символов в строке в процентах изменяется похожесть символа
 		else return false;
 	}
