@@ -11,6 +11,7 @@ use phpOCR\cOCR as cOCR;
 $startMem=memory_get_usage()/1024;
 $startTime=microtime(true);
 require_once "../cOCR.php";
+require_once "function.php";
 $file_name='../template/test_img/torg1.png';
 $ex="png";
 $img=cOCR::openImg($file_name);
@@ -58,7 +59,6 @@ showPic($img,$ex,100);
 echo "<br>Step 6 defineImg<br>";
 $text=cOCR::defineImg(cOCR::$img,$template);
 echo $text."<br>";
-
 $file_name="../template/test_img/torg1.".$ex;
 //$file_name="../template/test_img/slando1.".$ex;
 $img=cOCR::openImg($file_name);
@@ -105,35 +105,3 @@ echo "<br> time ".($endTime-$startTime)."ms";
 //$data=cOCR::count_colors_indexs();
 //arsort($data['index'],SORT_NUMERIC);
 //var_dump($data['percent']);
-
-function showPic($img,$ex,$prefix=0)
-{
-    chdir($_SERVER['DOCUMENT_ROOT']);
-    $dirToSave='tmp/ocr/';
-if(is_array($img))
-{
-    foreach ($img as $key => $value)
-    {
-        if(is_array($value)) showPic($value,$ex);
-        else
-        {
-            $t=rand();
-            $fh=fopen($dirToSave.'img'.$prefix.$t.$key.'.'.$ex,'w+');
-            fwrite($fh,'');
-            fclose($fh);
-            imagepng($value,$dirToSave.'img'.$prefix.$t.$key.'.'.$ex,9);
-            echo "<img src='/".$dirToSave."img".$prefix.$t.$key.".".$ex."'>||";
-        }
-    }
-}
-else
-{
-    $t=rand();
-    $fh=fopen($dirToSave.'img'.$prefix.$t.'.'.$ex,'w+');
-    fwrite($fh,'');
-    fclose($fh);
-    imagepng($img,$dirToSave.'img'.$prefix.$t.'.'.$ex,9);
-    echo "<img src='/".$dirToSave."img".$prefix.$t.".".$ex."'>||";
-}
-    chdir(dirname(__FILE__));
-}
