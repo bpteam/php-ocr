@@ -15,7 +15,7 @@ if(!isset($_POST['Submit1']))
 chdir(dirname(__FILE__));
 require_once '../cOCR.php';
 chdir(dirname(__FILE__));
-$template_name='sl';
+$template_name='torg';
 for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
 	$pic_file[] = '../template/test_img/'.$template_name.$i.'.png';
 }

@@ -14,7 +14,7 @@ require_once "../cOCR.php";
 require_once "function.php";
 $file_name='../template/test_img/torg1.png';
 $ex="png";
-cOCR::setInfelicity(15);
+cOCR::setInfelicity(10);
 $img=cOCR::openImg($file_name);
 //Исходное изображение
 echo "<br>Step 0 src img<br>";
