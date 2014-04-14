@@ -1,6 +1,9 @@
-Распознавание текста на изображении по шаблону
+OCR based on templates
 
-Примеры использования находятся в ./example/test.php
+
+Examples ./example/speed_test.php
+
+How to generate template look at ./template_generator/generator.php
 
 Extension:
 GD 2 http://libgd.bitbucket.org/

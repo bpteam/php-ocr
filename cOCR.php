@@ -19,19 +19,19 @@ class cOCR
 	 * Добавляет к краям изображения количество пикселей для удобного разрезания
 	 * @var int
 	 */
-	private static $_sizeBorder = 6;
+	protected static $_sizeBorder = 6;
 
 	/**
 	 * Погрешность в сравнении с шаблоном в процентах
 	 * @var float
 	 */
-	private static $infelicity = 10;
+	protected static $infelicity = 10;
 
 	/**
 	 * @param string $imgFile Имя файла с исображением
 	 * @return bool|resource
 	 */
-	static function openImg($imgFile) {
+	public static function openImg($imgFile) {
 		$info = @getimagesize($imgFile);
 		switch ($info[2]) {
 			case IMAGETYPE_PNG :
@@ -78,7 +78,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	static function getColorsIndex($img) {
+	protected static function getColorsIndex($img) {
 		$colorsIndex = array();
 		$imgInfo[0] = imagesx($img);
 		$imgInfo[1] = imagesy($img);
@@ -86,9 +86,11 @@ class cOCR
 			for ($y = 0; $y < $imgInfo[1]; $y++) {
 				$pixelIndex = imagecolorat($img, $x, $y);
 				$colorsIndex['pix'][$x][$y] = $pixelIndex;
-				if (isset($colorsIndex['index']) && array_key_exists($pixelIndex, $colorsIndex['index']))
+				if (isset($colorsIndex['index'][$pixelIndex])){
 					$colorsIndex['index'][$pixelIndex]++;
-				else $colorsIndex['index'][$pixelIndex] = 1;
+				} else {
+					$colorsIndex['index'][$pixelIndex] = 1;
+				}
 			}
 		}
 		arsort($colorsIndex['index'], SORT_NUMERIC);
@@ -104,7 +106,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	static function getColorsIndexTextAndBackground($img) {
+	protected static function getColorsIndexTextAndBackground($img) {
 		$countColors = self::getColorsIndex($img);
 		reset($countColors['index']);
 		$backgroundIndex = key($countColors['index']);
@@ -126,7 +128,7 @@ class cOCR
 	 * @param resource $img
 	 * @return resource
 	 */
-	static function checkBackgroundBrightness($img) {
+	protected static function checkBackgroundBrightness($img) {
 		$colorIndexes = self::getColorsIndexTextAndBackground($img);
 		$backgroundColor = imagecolorsforindex($img, $colorIndexes['background']);
 		$brightnessBackground = ($backgroundColor['red'] + $backgroundColor['green'] + $backgroundColor['blue']) / 3;
@@ -144,7 +146,7 @@ class cOCR
 	 * @param array    $arrayIndexes
 	 * @return array
 	 */
-	static function getMidColorToIndexes($img, $arrayIndexes) {
+	protected static function getMidColorToIndexes($img, $arrayIndexes) {
 		$midColor['red'] = 0;
 		$midColor['green'] = 0;
 		$midColor['blue'] = 0;
@@ -181,7 +183,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	static function divideToLine($img) {
+	protected static function divideToLine($img) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
 		$coordinates = self::coordinatesImg($img);
@@ -194,7 +196,7 @@ class cOCR
 			if ($hMin > $hLine) $hMin = $hLine;
 		}
 
-		// Увеличим все строки на пятую часть самой маленькой для захвата заглавных букв м хвостов букв
+		// Увеличим все строки на пятую часть самой маленькой для захвата заглавных букв хвостов букв у и т.д.
 		$changeSize = 0.2 * $hMin;
 		foreach ($topLine as $key => $value) {
 			if (($topLine[$key] - $changeSize) >= 0) $topLine[$key] -= $changeSize;
@@ -216,7 +218,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	static function divideToWord($img) {
+	protected static function divideToWord($img) {
 		$imgLine = self::divideToLine($img);
 		$imgWord = array();
 		foreach ($imgLine as $lineKey => $lineValue) {
@@ -243,7 +245,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	static function divideToChar($img) {
+	protected static function divideToChar($img) {
 		$imgWord = self::divideToWord($img);
 		$imgChar = array();
 		foreach ($imgWord as $lineKey => $lineValue) {
@@ -280,7 +282,7 @@ class cOCR
 	 * @param int      $border Размер границы одной части текста до другой
 	 * @return array координаты для обрезания
 	 */
-	static function coordinatesImg($img, $rotate = false, $border = 2) {
+	protected static function coordinatesImg($img, $rotate = false, $border = 2) {
 		if ($rotate) {
 			$white = imagecolorallocate($img, 255, 255, 255);
 			$img = imagerotate($img, 270, $white);
@@ -342,7 +344,7 @@ class cOCR
 	 * @param resource $img
 	 * @return int
 	 */
-	static function getBrightnessToIndex($colorIndex, $img = null) {
+	protected static function getBrightnessToIndex($colorIndex, $img = null) {
 		if ($img === null) $img = self::$img;
 		$color = imagecolorsforindex($img, $colorIndex);
 		return ($color['red'] + $color['green'] + $color['blue']) / 3;
@@ -354,7 +356,7 @@ class cOCR
 	 * @param string   $bType тип утолщения width height
 	 * @return resource
 	 */
-	static function boldText($img, $bType = 'width') {
+	protected static function boldText($img, $bType = 'width') {
 		$colorIndexes = self::getColorsIndexTextAndBackground($img);
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
@@ -364,7 +366,7 @@ class cOCR
 		$boldSize = 10; //Величина утолщения
 		for ($x = 0; $x < $imgInfo['x']; $x++) {
 			for ($y = 0; $y < $imgInfo['y']; $y++) {
-				if (array_search(imagecolorat($img, $x, $y), $colorIndexes['text']) !== false) {
+				if (in_array(imagecolorat($img, $x, $y), $colorIndexes['text'])) {
 					switch ($bType) {
 						case 'width':
 							imagefilledrectangle($blurImg, $x - $boldSize, $y, $x + $boldSize, $y, $black);
@@ -388,7 +390,7 @@ class cOCR
 	 * @param int      $h   высота
 	 * @return resource
 	 */
-	static function resizeImg($img, $w, $h) {
+	protected static function resizeImg($img, $w, $h) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
 		$newImg = imagecreatetruecolor($w, $h);
@@ -413,7 +415,7 @@ class cOCR
 	 * @param int      $blue
 	 * @return resource
 	 */
-	static function chengeColor($img, $colorIndex, $red = 0, $green = 0, $blue = 0) {
+	protected static function chengeColor($img, $colorIndex, $red = 0, $green = 0, $blue = 0) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
 		$newColor = imagecolorallocate($img, $red, $green, $blue);
@@ -432,7 +434,7 @@ class cOCR
 	 * @param int      $h
 	 * @return string
 	 */
-	static function generateTemplateChar($img, $w = 15, $h = 16) {
+	public static function generateTemplateChar($img, $w = 15, $h = 16) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
 		if ($imgInfo['x'] != $w || $imgInfo['y'] != $h) $img = self::resizeImg($img, $w, $h);
@@ -453,10 +455,10 @@ class cOCR
 	 * @param array $imgs  Массив resource из изображений для создания шаблона
 	 * @return array|bool
 	 */
-	static function generateTemplate($chars, $imgs) {
+	public static function generateTemplate($chars, $imgs) {
 		if (count($chars) != count($imgs)) return false;
 		$template = array();
-		foreach ($chars as $charKey => $charValue) $template["{$charValue}"] = self::generateTemplateChar($imgs[$charKey]);
+		foreach ($chars as $charKey => $charValue) $template[$charValue] = self::generateTemplateChar($imgs[$charKey]);
 		return $template;
 	}
 
@@ -465,7 +467,7 @@ class cOCR
 	 * @param string $name     Имя шаблона
 	 * @param array  $template шаблон
 	 */
-	static function saveTemplate($name, $template) {
+	public static function saveTemplate($name, $template) {
 		$json = json_encode($template, JSON_FORCE_OBJECT);
 		$name = dirname(__FILE__) . '/template/' . $name . '.json';
 		$fh = fopen($name, 'w');
@@ -478,7 +480,7 @@ class cOCR
 	 * @param string $name имя шаблона
 	 * @return array|bool
 	 */
-	static function loadTemplate($name) {
+	public static function loadTemplate($name) {
 		$name = dirname(__FILE__) . '/template/' . $name . '.json';
 		$json = file_get_contents($name);
 		return json_decode($json, true);
@@ -490,7 +492,7 @@ class cOCR
 	 * @param array    $template
 	 * @return int|string
 	 */
-	static function defineChar($img, $template) {
+	protected static function defineChar($img, $template) {
 		$templateChar = self::generateTemplateChar($img);
 		foreach ($template as $key => $value) {
 			if (self::compareChar($templateChar, $value)) return $key;
@@ -504,8 +506,8 @@ class cOCR
 	 * @param string $char2 символ 1 в виде шаблона
 	 * @return bool
 	 */
-	static function compareChar($char1, $char2) {
-		$difference = levenshtein($char1, $char2); //TODO Попробовать similar_text
+	protected static function compareChar($char1, $char2) {
+		$difference = levenshtein($char1, $char2);
 		if ($difference < strlen($char1) * (self::$infelicity / 100)) return true; // Разница на количество символов в строке в процентах изменяется похожесть символа
 		else return false;
 	}
@@ -516,7 +518,7 @@ class cOCR
 	 * @param array    $template
 	 * @return string
 	 */
-	static function defineImg($img, $template) {
+	public static function defineImg($img, $template) {
 		$imgs = self::divideToChar($img);
 		$text = '';
 		foreach ($imgs as $line) {
@@ -536,7 +538,7 @@ class cOCR
 	 * @param array $imgs Масси изображений символов
 	 * @return array Массив изображений уникальных символов
 	 */
-	static function findUniqueChar($imgs) {
+	protected static function findUniqueChar($imgs) {
 		$templateChars = array();
 		foreach ($imgs as $key => $value) {
 			$templateChars[$key] = self::generateTemplateChar($value);
