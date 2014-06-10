@@ -12,12 +12,10 @@ use phpOCR\cOCR as cOCR;
 set_time_limit(600);
 if(!isset($_POST['Submit1']))
 {
-chdir(dirname(__FILE__));
-require_once '../cOCR.php';
-chdir(dirname(__FILE__));
-$template_name='slando';
-for($i=1;file_exists('../template/test_img/'.$template_name.$i.'.png');$i++){
-	$pic_file[] = '../template/test_img/'.$template_name.$i.'.png';
+require_once dirname(__FILE__).'/../cOCR.php';
+$template_name='torg';
+for($i=1;file_exists(dirname(__FILE__).'/../template/test_img/'.$template_name.$i.'.png');$i++){
+	$pic_file[] = dirname(__FILE__).'/../template/test_img/'.$template_name.$i.'.png';
 }
 $char_array=array();
 foreach ($pic_file as $key => $value)
