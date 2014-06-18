@@ -37,7 +37,8 @@ foreach ($char_array as $key => $value)
     imagepng($value,$name);
     $tmp=cOCR::generateTemplateChar($value);
     ?>
-    <img src="<?php echo $name;?>"/><input type='text' name="template_<?php echo $tmp;?>" value=''/><br/>
+    <img src="<?=$name;?>"/><input type='text' name="template_<?=$key;?>" value=''/><br/>
+	<input type="hidden" name="pattern_<?=$key;?>" value="<?=$tmp?>">
     <?php
 }
 ?>
@@ -50,9 +51,9 @@ else
     $chars=array();
     foreach ($_POST as $key => $value)
     {
-        if(preg_match('#template_(?<template>[01]+)#ims',$key,$match) && $value!='')
+        if(preg_match('%template_(?<template>[^"]+)%ims',$key,$match) && $value!='')
         {
-            $chars[$value]=$match['template'];
+            $chars[$_POST['pattern_'.$match['template']]]=$value;
         }
     }
     echo $json=json_encode($chars,JSON_FORCE_OBJECT);

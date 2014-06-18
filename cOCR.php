@@ -495,7 +495,7 @@ class cOCR
 	protected static function defineChar($img, $template) {
 		$templateChar = self::generateTemplateChar($img);
 		foreach ($template as $key => $value) {
-			if (self::compareChar($templateChar, $value)) return $key;
+			if (self::compareChar($templateChar, $key)) return $value;
 		}
 		return "?";
 	}
