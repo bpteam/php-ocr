@@ -12,7 +12,7 @@ $startMem=memory_get_usage()/1024;
 $startTime=microtime(true);
 require_once "../cOCR.php";
 require_once "function.php";
-$file_name='../template/test_img/torg1.png';
+$file_name='../template/test_img/speed_test1.png';
 $ex="png";
 cOCR::setInfelicity(10);
 $img=cOCR::openImg($file_name);
@@ -21,7 +21,7 @@ echo "<br>Step 0 src img<br>";
 showPic($img,$ex,100);
 
 //load template
-$name="torg";
+$name="speed_test";
 $template=cOCR::loadTemplate($name);
 
 // OCR
