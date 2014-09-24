@@ -26,7 +26,7 @@ $template=cOCR::loadTemplate($name);
 
 // OCR
 echo "<br>defineImg<br>";
-$text=cOCR::defineImg(cOCR::$img,$template);
+$text=cOCR::defineImg($file_name,$template);
 echo $text."<br>";
 
 $endMem=memory_get_usage()/1024;

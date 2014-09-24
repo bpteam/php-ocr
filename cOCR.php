@@ -518,7 +518,8 @@ class cOCR
 	 * @param array    $template
 	 * @return string
 	 */
-	public static function defineImg($img, $template) {
+	public static function defineImg($imgFile, $template) {
+		$img = self::openImg($imgFile);
 		$imgs = self::divideToChar($img);
 		$text = '';
 		foreach ($imgs as $line) {
