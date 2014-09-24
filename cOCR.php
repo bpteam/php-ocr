@@ -245,7 +245,7 @@ class cOCR
 	 * @param resource $img
 	 * @return array
 	 */
-	public static function divideToChar($img) {
+	protected static function divideToChar($img) {
 		$imgWord = self::divideToWord($img);
 		$imgChar = array();
 		foreach ($imgWord as $lineKey => $lineValue) {
@@ -434,7 +434,7 @@ class cOCR
 	 * @param int      $h
 	 * @return string
 	 */
-	public static function generateTemplateChar($img, $w = 15, $h = 16) {
+	protected static function generateTemplateChar($img, $w = 15, $h = 16) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
 		if ($imgInfo['x'] != $w || $imgInfo['y'] != $h) $img = self::resizeImg($img, $w, $h);
@@ -538,7 +538,7 @@ class cOCR
 	 * @param array $imgs Масси изображений символов
 	 * @return array Массив изображений уникальных символов
 	 */
-	public static function findUniqueChar($imgs) {
+	protected static function findUniqueChar($imgs) {
 		$templateChars = array();
 		foreach ($imgs as $key => $value) {
 			$templateChars[$key] = self::generateTemplateChar($value);
