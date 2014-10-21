@@ -16,7 +16,7 @@ set_time_limit(600);
 
 if (!isset($_POST['Submit1'])) {
 	require_once dirname(__FILE__) . '/../cOCR.php';
-	$template_name = 'speed_test';
+	$template_name = 'olx';
 	for ($i = 1; file_exists(dirname(__FILE__) . '/../template/test_img/' . $template_name . $i . '.png'); $i++) {
 		$pic_file[] = dirname(__FILE__) . '/../template/test_img/' . $template_name . $i . '.png';
 	}
