@@ -27,6 +27,8 @@ class cOCR
 	 */
 	protected static $infelicity = 10;
 
+	protected static $templateDir = false;
+
 	/**
 	 * @param string $imgFile Имя файла с исображением
 	 * @return bool|resource
@@ -176,6 +178,20 @@ class cOCR
 
 	public static function setInfelicity($val) {
 		self::$infelicity = $val;
+	}
+
+	/**
+	 * @return boolean|string
+	 */
+	public static function getTemplateDir() {
+		return self::$templateDir;
+	}
+
+	/**
+	 * @param boolean|string $templateDir
+	 */
+	public static function setTemplateDir($templateDir) {
+		self::$templateDir = $templateDir;
 	}
 
 	/**
@@ -481,7 +497,10 @@ class cOCR
 	 * @return array|bool
 	 */
 	public static function loadTemplate($name) {
-		$name = dirname(__FILE__) . '/template/' . $name . '.json';
+		if(!self::getTemplateDir()){
+			self::setTemplateDir(dirname(__FILE__) . '/template/');
+		}
+		$name = self::getTemplateDir() . $name . '.json';
 		$json = file_get_contents($name);
 		return json_decode($json, true);
 	}
