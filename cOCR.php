@@ -65,7 +65,6 @@ class cOCR
 		}
 		$imgInfo[0] = imagesx($tmpImg);
 		$imgInfo[1] = imagesy($tmpImg);
-		//Увеличиваем с каждой стороны на 4 пикселя чтоб избежать начала текста близко к краю изображения
 		self::$img = imagecreatetruecolor($imgInfo[0] + self::$_sizeBorder, $imgInfo[1] + self::$_sizeBorder);
 		$white = imagecolorallocate(self::$img, 255, 255, 255);
 		imagefill(self::$img, 0, 0, $white);
@@ -116,9 +115,9 @@ class cOCR
 		// Собираем все цвета отличные от фона
 		$backgroundBrightness = self::getBrightnessToIndex($backgroundIndex, $img);
 		$backgroundBrightness = $backgroundBrightness - ($backgroundBrightness * 0.2);
-		foreach ($countColors['index'] as $key => $value) {
-			$colorBrightness = self::getBrightnessToIndex($key, $img);
-			if ($backgroundBrightness < ($colorBrightness + 50)) unset($countColors['index'][$key]);
+		foreach ($countColors['index'] as $colorKey => $color) {
+			$colorBrightness = self::getBrightnessToIndex($colorKey, $img);
+			if ($backgroundBrightness < ($colorBrightness + 50)) unset($countColors['index'][$colorKey]);
 		}
 		$indexes['text'] = array_keys($countColors['index']);
 		$indexes['background'] = $backgroundIndex;
@@ -136,7 +135,7 @@ class cOCR
 		$brightnessBackground = ($backgroundColor['red'] + $backgroundColor['green'] + $backgroundColor['blue']) / 3;
 		$midColor = self::getMidColorToIndexes($img, $colorIndexes['text']);
 		$brightnessText = ($midColor['red'] + $midColor['green'] + $midColor['blue']) / 3;
-		if ($brightnessBackground < $brightnessText) imagefilter($img, IMG_FILTER_NEGATE); //Инвертируем если фон темнее чем текст
+		if ($brightnessBackground < $brightnessText) imagefilter($img, IMG_FILTER_NEGATE);
 		$colorIndexes = self::getColorsIndexTextAndBackground($img);
 		$img = self::chengeColor($img, $colorIndexes['background'], 255, 255, 255);
 		return $img;
@@ -221,10 +220,15 @@ class cOCR
 		// Нарезаем на полоски с текстом
 		$imgLine = array();
 		foreach ($topLine as $key => $value) {
-			$imgLine[$key] = imagecreatetruecolor($imgInfo['x'] + self::$_sizeBorder, $bottomLine[$key] - $topLine[$key] + self::$_sizeBorder);
+			$width = $imgInfo['x'] + self::$_sizeBorder;
+			$hight = $bottomLine[$key] - $topLine[$key] + self::$_sizeBorder;
+			$imgLine[$key] = imagecreatetruecolor($width, $hight);
 			$white = imagecolorallocate($imgLine[$key], 255, 255, 255);
 			imagefill($imgLine[$key], 0, 0, $white);
-			imagecopy($imgLine[$key], $img, self::$_sizeBorder / 2, self::$_sizeBorder / 2, 0, $topLine[$key], $imgInfo['x'], $bottomLine[$key] - $topLine[$key]);
+			$dst_x = self::$_sizeBorder / 2;
+			$dst_y = self::$_sizeBorder / 2;
+			$src_h = $bottomLine[$key] - $topLine[$key];
+			imagecopy($imgLine[$key], $img, $dst_x, $dst_y, 0, $topLine[$key], $imgInfo['x'], $src_h);
 		}
 		return $imgLine;
 	}
@@ -245,12 +249,17 @@ class cOCR
 			$endWord = $coordinates['end'];
 			// Нарезаем на слова
 			foreach ($beginWord as $beginKey => $beginValue) {
-				$imgWord[$lineKey][] = imagecreatetruecolor($endWord[$beginKey] - $beginValue + self::$_sizeBorder, $imgInfo['y'] + self::$_sizeBorder);
+				$width = $endWord[$beginKey] - $beginValue + self::$_sizeBorder;
+				$hight = $imgInfo['y'] + self::$_sizeBorder;
+				$imgWord[$lineKey][] = imagecreatetruecolor($width, $hight);
 				end($imgWord[$lineKey]);
 				$keyArrayWord = key($imgWord[$lineKey]);
 				$white = imagecolorallocate($imgWord[$lineKey][$keyArrayWord], 255, 255, 255);
 				imagefill($imgWord[$lineKey][$keyArrayWord], 0, 0, $white);
-				imagecopy($imgWord[$lineKey][$keyArrayWord], $lineValue, self::$_sizeBorder / 2, self::$_sizeBorder / 2, $beginValue, 0, $endWord[$beginKey] - $beginValue, $imgInfo['y']);
+				$dst_x = self::$_sizeBorder / 2;
+				$dst_y = self::$_sizeBorder / 2;
+				$src_w = $endWord[$beginKey] - $beginValue;
+				imagecopy($imgWord[$lineKey][$keyArrayWord], $lineValue, $dst_x, $dst_y, $beginValue, 0, $src_w, $imgInfo['y']);
 			}
 		}
 		return $imgWord;
@@ -402,22 +411,22 @@ class cOCR
 	/**
 	 * Прапорциональное изменение размера изображения
 	 * @param resource $img изображение
-	 * @param int      $w   ширина
-	 * @param int      $h   высота
+	 * @param int      $width   ширина
+	 * @param int      $hight   высота
 	 * @return resource
 	 */
-	protected static function resizeImg($img, $w, $h) {
+	protected static function resizeImg($img, $width, $hight) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
-		$newImg = imagecreatetruecolor($w, $h);
+		$newImg = imagecreatetruecolor($width, $hight);
 		$white = imagecolorallocate($newImg, 255, 255, 255);
 		imagefill($newImg, 0, 0, $white);
 		if ($imgInfo['x'] < $imgInfo['y']) {
-			$w = $imgInfo['x'] * ($h / $imgInfo['y']);
+			$width = $imgInfo['x'] * ($hight / $imgInfo['y']);
 		} else {
-			$h = $imgInfo['y'] * ($w / $imgInfo['x']);
+			$hight = $imgInfo['y'] * ($width / $imgInfo['x']);
 		}
-		imagecopyresampled($newImg, $img, 0, 0, 0, 0, $w, $h, $imgInfo['x'], $imgInfo['y']);
+		imagecopyresampled($newImg, $img, 0, 0, 0, 0, $width, $hight, $imgInfo['x'], $imgInfo['y']);
 		return $newImg;
 	}
 
@@ -446,18 +455,18 @@ class cOCR
 	/**
 	 * Генерация шаблона из одного символа
 	 * @param resource $img
-	 * @param int      $w
-	 * @param int      $h
+	 * @param int      $width
+	 * @param int      $hight
 	 * @return string
 	 */
-	public static function generateTemplateChar($img, $w = 15, $h = 16) {
+	public static function generateTemplateChar($img, $width = 15, $hight = 16) {
 		$imgInfo['x'] = imagesx($img);
 		$imgInfo['y'] = imagesy($img);
-		if ($imgInfo['x'] != $w || $imgInfo['y'] != $h) $img = self::resizeImg($img, $w, $h);
+		if ($imgInfo['x'] != $width || $imgInfo['y'] != $hight) $img = self::resizeImg($img, $width, $hight);
 		$colorIndexes = self::getColorsIndexTextAndBackground($img);
 		$line = '';
-		for ($y = 0; $y < $h; $y++) {
-			for ($x = 0; $x < $w; $x++) {
+		for ($y = 0; $y < $hight; $y++) {
+			for ($x = 0; $x < $width; $x++) {
 				if (array_search(imagecolorat($img, $x, $y), $colorIndexes['text']) !== false) $line .= '1';
 				else $line .= '0';
 			}
@@ -527,7 +536,7 @@ class cOCR
 	 */
 	protected static function compareChar($char1, $char2) {
 		$difference = levenshtein($char1, $char2);
-		if ($difference < strlen($char1) * (self::$infelicity / 100)) return true; // Разница на количество символов в строке в процентах изменяется похожесть символа
+		if ($difference < strlen($char1) * (self::$infelicity / 100)) return true;
 		else return false;
 	}
 
