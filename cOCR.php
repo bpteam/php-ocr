@@ -320,53 +320,53 @@ class cOCR
 		$colorsIndex = self::getColorsIndex($img);
 		$imgInfo['x'] = imagesx($boldImg);
 		$imgInfo['y'] = imagesy($boldImg);
-		for ($y = 0; $y < $imgInfo['y']; $y++) {
-			$brightnessLines[$y] = 0;
-			$brightnessLinesNormal[$y] = 0;
+		for ($positionY = 0; $positionY < $imgInfo['y']; $positionY++) {
+			$brightnessLines[$positionY] = 0;
+			$brightnessLinesNormal[$positionY] = 0;
 			for ($x = 0; $x < $imgInfo['x']; $x++) {
-				$brightnessLines[$y] += self::getBrightnessToIndex($colorsIndexBold['pix'][$x][$y], $boldImg);
-				$brightnessLinesNormal[$y] += self::getBrightnessToIndex($colorsIndex['pix'][$x][$y], $img);
+				$brightnessLines[$positionY] += self::getBrightnessToIndex($colorsIndexBold['pix'][$x][$positionY], $boldImg);
+				$brightnessLinesNormal[$positionY] += self::getBrightnessToIndex($colorsIndex['pix'][$x][$positionY], $img);
 			}
-			$brightnessLines[$y] /= $imgInfo['x'];
-			$brightnessImg += $brightnessLinesNormal[$y] / $imgInfo['x'];
+			$brightnessLines[$positionY] /= $imgInfo['x'];
+			$brightnessImg += $brightnessLinesNormal[$positionY] / $imgInfo['x'];
 		}
 		$brightnessImg /= $imgInfo['y'];
 		$coordinates['start'] = array();
 		$coordinates['end'] = array();
 		//search border of text
-		for ($y = $border; $y < $imgInfo['y'] - $border; $y++) {
-			if (self::isTopBorder($brightnessLines, $brightnessImg, $y, $border))
-				$coordinates['start'][] = $y;
-			elseif (self::isBottomBorder($brightnessLines, $brightnessImg, $y, $border))
-				$coordinates['end'][] = $y;
-			elseif (self::isSpaceBetweenLines($brightnessLines, $brightnessImg, $y, $border)) {
-				$coordinates['start'][] = $y;
-				$coordinates['end'][] = $y;
+		for ($positionY = $border; $positionY < $imgInfo['y'] - $border; $positionY++) {
+			if (self::isTopBorder($brightnessLines, $brightnessImg, $positionY, $border))
+				$coordinates['start'][] = $positionY;
+			elseif (self::isBottomBorder($brightnessLines, $brightnessImg, $positionY, $border))
+				$coordinates['end'][] = $positionY;
+			elseif (self::isSpaceBetweenLines($brightnessLines, $brightnessImg, $positionY, $border)) {
+				$coordinates['start'][] = $positionY;
+				$coordinates['end'][] = $positionY;
 			}
 		}
 		return $coordinates;
 	}
 
-	protected static function isTopBorder($brightnessLines, $brightnessImg, $y, $border){
-		return ($brightnessLines[$y - $border] > $brightnessImg
-			&& ($brightnessLines[$y - ($border - 1)] > $brightnessImg || $border == 1)
-			&& $brightnessLines[$y] > $brightnessImg
-			&& ($brightnessLines[$y + ($border - 1)] < $brightnessImg || $border == 1)
-			&& $brightnessLines[$y + $border] < $brightnessImg);
+	protected static function isTopBorder($brightnessLines, $brightnessImg, $positionY, $border){
+		return ($brightnessLines[$positionY - $border] > $brightnessImg
+			&& ($brightnessLines[$positionY - ($border - 1)] > $brightnessImg || $border == 1)
+			&& $brightnessLines[$positionY] > $brightnessImg
+			&& ($brightnessLines[$positionY + ($border - 1)] < $brightnessImg || $border == 1)
+			&& $brightnessLines[$positionY + $border] < $brightnessImg);
 	}
 
-	protected static function isBottomBorder($brightnessLines, $brightnessImg, $y, $border){
-		return ($brightnessLines[$y - $border] < $brightnessImg
-			&& ($brightnessLines[$y - ($border - 1)] < $brightnessImg || $border == 1)
-			&& $brightnessLines[$y] > $brightnessImg
-			&& ($brightnessLines[$y + ($border - 1)] > $brightnessImg || $border == 1)
-			&& $brightnessLines[$y + $border] > $brightnessImg);
+	protected static function isBottomBorder($brightnessLines, $brightnessImg, $positionY, $border){
+		return ($brightnessLines[$positionY - $border] < $brightnessImg
+			&& ($brightnessLines[$positionY - ($border - 1)] < $brightnessImg || $border == 1)
+			&& $brightnessLines[$positionY] > $brightnessImg
+			&& ($brightnessLines[$positionY + ($border - 1)] > $brightnessImg || $border == 1)
+			&& $brightnessLines[$positionY + $border] > $brightnessImg);
 	}
 
-	protected static function isSpaceBetweenLines($brightnessLines, $brightnessImg, $y, $border){
-		return ($brightnessLines[$y - $border] < $brightnessImg
-			&& $brightnessLines[$y] > $brightnessImg
-			&& $brightnessLines[$y + $border] < $brightnessImg
+	protected static function isSpaceBetweenLines($brightnessLines, $brightnessImg, $positionY, $border){
+		return ($brightnessLines[$positionY - $border] < $brightnessImg
+			&& $brightnessLines[$positionY] > $brightnessImg
+			&& $brightnessLines[$positionY + $border] < $brightnessImg
 			&& $border == 1);
 	}
 
