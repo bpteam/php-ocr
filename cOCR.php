@@ -485,7 +485,7 @@ class cOCR
 	 */
 	public static function saveTemplate($name, $template) {
 		$json = json_encode($template, JSON_FORCE_OBJECT);
-		$name = dirname(__FILE__) . '/template/' . $name . '.json';
+		$name = __DIR__ . '/template/' . $name . '.json';
 		$fh = fopen($name, 'w');
 		fwrite($fh, $json);
 		fclose($fh);
@@ -498,7 +498,7 @@ class cOCR
 	 */
 	public static function loadTemplate($name) {
 		if(!self::getTemplateDir()){
-			self::setTemplateDir(dirname(__FILE__) . '/template/');
+			self::setTemplateDir(__DIR__ . '/template/');
 		}
 		$name = self::getTemplateDir() . $name . '.json';
 		$json = file_get_contents($name);

@@ -15,10 +15,10 @@ error_reporting(E_ALL);
 set_time_limit(600);
 
 if (!isset($_POST['Submit1'])) {
-	require_once dirname(__FILE__) . '/../cOCR.php';
+	require_once __DIR__ . '/../cOCR.php';
 	$template_name = 'olx';
-	for ($i = 1; file_exists(dirname(__FILE__) . '/../template/test_img/' . $template_name . $i . '.png'); $i++) {
-		$pic_file[] = dirname(__FILE__) . '/../template/test_img/' . $template_name . $i . '.png';
+	for ($i = 1; file_exists(__DIR__ . '/../template/test_img/' . $template_name . $i . '.png'); $i++) {
+		$pic_file[] = __DIR__ . '/../template/test_img/' . $template_name . $i . '.png';
 	}
 	$char_array = array();
 	foreach ($pic_file as $key => $value) {
