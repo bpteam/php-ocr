@@ -115,7 +115,7 @@ class cOCR
 		// Собираем все цвета отличные от фона
 		$backgroundBrightness = self::getBrightnessToIndex($backgroundIndex, $img);
 		$backgroundBrightness = $backgroundBrightness - ($backgroundBrightness * 0.2);
-		foreach ($countColors['index'] as $colorKey => $color) {
+		foreach (array_keys($countColors['index']) as $colorKey) {
 			$colorBrightness = self::getBrightnessToIndex($colorKey, $img);
 			if ($backgroundBrightness < ($colorBrightness + 50)) unset($countColors['index'][$colorKey]);
 		}
@@ -333,34 +333,41 @@ class cOCR
 		$brightnessImg /= $imgInfo['y'];
 		$coordinates['start'] = array();
 		$coordinates['end'] = array();
-		//Находим все верхние и нижние границы строк текста
+		//search border of text
 		for ($y = $border; $y < $imgInfo['y'] - $border; $y++) {
-			//Top
-			if ($brightnessLines[$y - $border] > $brightnessImg
-				&& ($brightnessLines[$y - ($border - 1)] > $brightnessImg || $border == 1)
-				&& $brightnessLines[$y] > $brightnessImg
-				&& ($brightnessLines[$y + ($border - 1)] < $brightnessImg || $border == 1)
-				&& $brightnessLines[$y + $border] < $brightnessImg
-			)
+			if (self::isTopBorder($brightnessLines, $brightnessImg, $y, $border))
 				$coordinates['start'][] = $y;
-			//Bottom
-			elseif ($brightnessLines[$y - $border] < $brightnessImg
-				&& ($brightnessLines[$y - ($border - 1)] < $brightnessImg || $border == 1)
-				&& $brightnessLines[$y] > $brightnessImg
-				&& ($brightnessLines[$y + ($border - 1)] > $brightnessImg || $border == 1)
-				&& $brightnessLines[$y + $border] > $brightnessImg
-			)
+			elseif (self::isBottomBorder($brightnessLines, $brightnessImg, $y, $border))
 				$coordinates['end'][] = $y;
-			elseif ($brightnessLines[$y - $border] < $brightnessImg
-				&& $brightnessLines[$y] > $brightnessImg
-				&& $brightnessLines[$y + $border] < $brightnessImg
-				&& $border == 1
-			) {
+			elseif (self::isSpaceBetweenLines($brightnessLines, $brightnessImg, $y, $border)) {
 				$coordinates['start'][] = $y;
 				$coordinates['end'][] = $y;
 			}
 		}
 		return $coordinates;
+	}
+
+	protected static function isTopBorder($brightnessLines, $brightnessImg, $y, $border){
+		return ($brightnessLines[$y - $border] > $brightnessImg
+			&& ($brightnessLines[$y - ($border - 1)] > $brightnessImg || $border == 1)
+			&& $brightnessLines[$y] > $brightnessImg
+			&& ($brightnessLines[$y + ($border - 1)] < $brightnessImg || $border == 1)
+			&& $brightnessLines[$y + $border] < $brightnessImg);
+	}
+
+	protected static function isBottomBorder($brightnessLines, $brightnessImg, $y, $border){
+		return ($brightnessLines[$y - $border] < $brightnessImg
+			&& ($brightnessLines[$y - ($border - 1)] < $brightnessImg || $border == 1)
+			&& $brightnessLines[$y] > $brightnessImg
+			&& ($brightnessLines[$y + ($border - 1)] > $brightnessImg || $border == 1)
+			&& $brightnessLines[$y + $border] > $brightnessImg);
+	}
+
+	protected static function isSpaceBetweenLines($brightnessLines, $brightnessImg, $y, $border){
+		return ($brightnessLines[$y - $border] < $brightnessImg
+			&& $brightnessLines[$y] > $brightnessImg
+			&& $brightnessLines[$y + $border] < $brightnessImg
+			&& $border == 1);
 	}
 
 	/**
@@ -495,9 +502,7 @@ class cOCR
 	public static function saveTemplate($name, $template) {
 		$json = json_encode($template, JSON_FORCE_OBJECT);
 		$name = __DIR__ . '/template/' . $name . '.json';
-		$fh = fopen($name, 'w');
-		fwrite($fh, $json);
-		fclose($fh);
+		file_put_contents($name, $json);
 	}
 
 	/**
@@ -542,8 +547,8 @@ class cOCR
 
 	/**
 	 * Распознование текста на изображении
-	 * @param resource $img
-	 * @param array    $template
+	 * @param       $imgFile
+	 * @param array $template
 	 * @return string
 	 */
 	public static function defineImg($imgFile, $template) {
@@ -573,7 +578,6 @@ class cOCR
 			$templateChars[$key] = self::generateTemplateChar($value);
 		}
 		$templateChars = array_unique($templateChars);
-		//$clone=$templateChars;
 		$cloneKey = array();
 		foreach ($templateChars as $key => $value) {
 			foreach ($templateChars as $tmpKey => $tmpValue)
