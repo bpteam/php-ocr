@@ -1,0 +1,12 @@
+{
+  "name": "bpteam/phpOCR",
+  "description": "basic php ocr lib",
+  "minimum-stability": "dev",
+  "license": "open source",
+  "authors": [
+    {
+      "name": "Evgeny Pynykh",
+      "email": "bpteam22@gmail.com"
+    }
+  ]
+}
