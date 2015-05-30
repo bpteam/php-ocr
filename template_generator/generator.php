@@ -18,7 +18,7 @@ set_time_limit(600);
 if (!isset($_POST['Submit1'])) {
     $templateName = 'olx';
     $picFiles = [];
-    $maxTemplate = 1000;
+    $maxTemplate = 1;
     for ($i = 1; file_exists(__DIR__ . '/../template/test_img/' . $templateName . $i . '.png') && $i <= $maxTemplate; $i++) {
         $picFiles[] = __DIR__ . '/../template/test_img/' . $templateName . $i . '.png';
     }
@@ -27,7 +27,7 @@ if (!isset($_POST['Submit1'])) {
         $img = phpOCR::openImg($fileName);
         phpOCR::showImg($img);
         phpOCR::setInfelicity(10);
-        $imgs = phpOCR::divideToChar($img);
+        $imgs = phpOCR::divideByChar($img);
         if (is_array($imgs)) {
             $chars = array_merge($chars, $imgs);
         }
@@ -49,10 +49,10 @@ if (!isset($_POST['Submit1'])) {
             imagepng($fileName, $name);
             $tmp = phpOCR::generateTemplateChar($fileName);
             ?>
-            <img src="<?= $name; ?>"/><label>
-                <input type='text' name="template_<?= $key; ?>" value=''/>
+            <img src="<?= $name ?>"/><label>
+                <input type='text' name="template_<?= $key ?>" value=''/>
             </label><br/>
-            <input type="hidden" name="pattern_<?= $key; ?>" value="<?= $tmp ?>">
+            <input type="hidden" name="pattern_<?= $key ?>" value="<?= $tmp ?>">
         <?}?>
         <input name='Submit1' type='submit' value='Gen'>
     </form>

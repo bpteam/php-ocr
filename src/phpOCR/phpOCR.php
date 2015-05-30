@@ -110,10 +110,6 @@ class phpOCR
             }
         }
         arsort($colorsIndex['index'], SORT_NUMERIC);
-        $colorsIndex['count_pix'] = $width * $height;
-        foreach ($colorsIndex['index'] as $key => $value) {
-            $colorsIndex['percent'][$key] = ($value / $colorsIndex['count_pix']) * 100;
-        }
 
         return $colorsIndex;
     }
@@ -126,19 +122,20 @@ class phpOCR
     protected static function getColorsIndexTextAndBackground($img)
     {
         $countColors = self::getColorsIndex($img);
-        reset($countColors['index']);
-        $backgroundIndex = key($countColors['index']);
-        unset($countColors['index'][$backgroundIndex]);
+        $countColors['index'] = array_keys($countColors['index']);
+        $backgroundIndex = array_shift($countColors['index']);
+        $indexes['background'] = $backgroundIndex;
+        $indexes['pix'] = $countColors['pix'];
         // Собираем все цвета отличные от фона
-        $backgroundBrightness = self::getBrightnessToIndex($backgroundIndex, $img);
+        $backgroundBrightness = self::getBrightnessFromIndex($img, $backgroundIndex);
         $backgroundBrightness = $backgroundBrightness - ($backgroundBrightness * 0.2);
-        foreach (array_keys($countColors['index']) as $colorKey) {
-            $colorBrightness = self::getBrightnessToIndex($colorKey, $img);
+        foreach ($countColors['index'] as $colorKey => $colorValue) {
+            $colorBrightness = self::getBrightnessFromIndex($img, $colorValue);
             if ($backgroundBrightness < ($colorBrightness + self::$colorDiff)) {
                 unset($countColors['index'][$colorKey]);
             }
         }
-        $indexes['text'] = array_keys($countColors['index']);
+        $indexes['text'] = $countColors['index'];
         $indexes['background'] = $backgroundIndex;
         $indexes['pix'] = $countColors['pix'];
 
@@ -150,19 +147,21 @@ class phpOCR
      * @param resource $img
      * @return resource
      */
-    protected static function changeBackgroundBrightness($img)
+    public static function changeBackgroundBrightness($img)
     {
         $colorIndexes = self::getColorsIndexTextAndBackground($img);
-        $backgroundColor = imagecolorsforindex($img, $colorIndexes['background']);
-        $brightnessBackground = ($backgroundColor['red'] + $backgroundColor['green'] + $backgroundColor['blue']) / 3;
-        $midColor = self::getMidColorToIndexes($img, $colorIndexes['text']);
-        $brightnessText = ($midColor['red'] + $midColor['green'] + $midColor['blue']) / 3;
+        $brightnessBackground = self::getBrightnessFromIndex($img, $colorIndexes['background']);
+        if ($colorIndexes['text']) {
+            $midColor = self::getMidColorFromIndexes($img, $colorIndexes['text']);
+            $brightnessText = ($midColor['red'] + $midColor['green'] + $midColor['blue']) / 3;
+        } else {
+            $brightnessText = 255;
+        }
         if ($brightnessBackground < $brightnessText) {
             imagefilter($img, IMG_FILTER_NEGATE);
+            $colorIndexes = self::getColorsIndexTextAndBackground($img);
         }
-        $colorIndexes = self::getColorsIndexTextAndBackground($img);
-        //imagecolorset($img, $colorIndexes['background'],  255, 255, 255);
-        $img = self::changeColor($img, $colorIndexes['background'], 255, 255, 255);
+        imagecolorset($img, $colorIndexes['background'], 255, 255, 255);
 
         return $img;
     }
@@ -173,7 +172,7 @@ class phpOCR
      * @param array    $arrayIndexes
      * @return array
      */
-    protected static function getMidColorToIndexes($img, $arrayIndexes)
+    protected static function getMidColorFromIndexes($img, $arrayIndexes)
     {
         $midColor['red'] = 0;
         $midColor['green'] = 0;
@@ -184,12 +183,6 @@ class phpOCR
             $midColor['green'] += $color['green'];
             $midColor['blue'] += $color['blue'];
         }
-        $countIndexes = count($arrayIndexes);
-        foreach ($midColor as &$value) {
-            $value /= $countIndexes;
-        } //Вычисляем средний цвет текста
-        unset($value);
-
         return $midColor;
     }
 
@@ -234,7 +227,7 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    protected static function divideToLine($img)
+    protected static function divideByLine($img)
     {
         $imgWidth = imagesx($img);
         $imgHeight = imagesy($img);
@@ -267,10 +260,8 @@ class phpOCR
             $imgLine[$key] = imagecreatetruecolor($width, $height);
             $white = imagecolorallocate($imgLine[$key], 255, 255, 255);
             imagefill($imgLine[$key], 0, 0, $white);
-            $dst_x = self::$sizeBorder;
-            $dst_y = self::$sizeBorder;
             $src_h = $bottomLine[$key] - $topLine[$key];
-            imagecopy($imgLine[$key], $img, $dst_x, $dst_y, 0, $topLine[$key], $imgWidth, $src_h);
+            imagecopy($imgLine[$key], $img, self::$sizeBorder, self::$sizeBorder, 0, $topLine[$key], $imgWidth, $src_h);
         }
 
         return $imgLine;
@@ -281,9 +272,9 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    protected static function divideToWord($img)
+    protected static function divideByWord($img)
     {
-        $imgLine = self::divideToLine($img);
+        $imgLine = self::divideByLine($img);
         $imgWord = [];
         foreach ($imgLine as $lineKey => $lineValue) {
             $lineHeight = imagesy($lineValue);
@@ -313,9 +304,9 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    public static function divideToChar($img)
+    public static function divideByChar($img)
     {
-        $imgWord = self::divideToWord($img);
+        $imgWord = self::divideByWord($img);
         $imgChars = [];
         foreach ($imgWord as $lineKey => $lineValue) {
             foreach ($lineValue as $wordKey => $wordValue) {
@@ -367,8 +358,8 @@ class phpOCR
             $brightnessLines[$positionY] = 0;
             $brightnessLinesNormal[$positionY] = 0;
             for ($x = 0; $x < $width; $x++) {
-                $brightnessLines[$positionY] += self::getBrightnessToIndex($colorsIndexBold['pix'][$x][$positionY], $boldImg);
-                $brightnessLinesNormal[$positionY] += self::getBrightnessToIndex($colorsIndex['pix'][$x][$positionY], $img);
+                $brightnessLines[$positionY] += self::getBrightnessFromIndex($img, $colorsIndexBold['pix'][$x][$positionY]);
+                $brightnessLinesNormal[$positionY] += self::getBrightnessFromIndex($img, $colorsIndex['pix'][$x][$positionY]);
             }
             $brightnessLines[$positionY] /= $width;
             $brightnessImg += $brightnessLinesNormal[$positionY] / $width;
@@ -419,15 +410,12 @@ class phpOCR
 
     /**
      * Вычисляем яркость цвета по его индексу
-     * @param int      $colorIndex
      * @param resource $img
+     * @param int      $colorIndex
      * @return int
      */
-    protected static function getBrightnessToIndex($colorIndex, $img = null)
+    protected static function getBrightnessFromIndex($img, $colorIndex)
     {
-        if ($img === null) {
-            $img = self::$img;
-        }
         $color = imagecolorsforindex($img, $colorIndex);
 
         return ($color['red'] + $color['green'] + $color['blue']) / 3;
@@ -486,31 +474,6 @@ class phpOCR
         return $newImg;
     }
 
-    /**
-     * Изменение цвета в изображении, если изображение открыто через imagecreate,
-     * то можно просто поменять цвет индекса через функцию imagecolorset
-     * @param resource $img
-     * @param int      $colorIndex индекс цвета который нужно изменить
-     * @param int      $red
-     * @param int      $green
-     * @param int      $blue
-     * @return resource
-     */
-    protected static function changeColor($img, $colorIndex, $red = 0, $green = 0, $blue = 0)
-    {
-        $imgInfo['x'] = imagesx($img);
-        $imgInfo['y'] = imagesy($img);
-        $newColor = imagecolorallocate($img, $red, $green, $blue);
-        for ($x = 0; $x < $imgInfo['x']; $x++) {
-            for ($y = 0; $y < $imgInfo['y']; $y++) {
-                if (imagecolorat($img, $x, $y) == $colorIndex) {
-                    imagesetpixel($img, $x, $y, $newColor);
-                }
-            }
-        }
-
-        return $img;
-    }
 
     /**
      * Генерация шаблона из одного символа
@@ -567,8 +530,8 @@ class phpOCR
      */
     public static function saveTemplate($name, $template)
     {
-        $json = json_encode($template, JSON_FORCE_OBJECT);
-        $name = __DIR__ . '/template/' . $name . '.json';
+        $json = json_encode($template);
+        $name = self::getTemplateDir() . $name . '.json';
         file_put_contents($name, $json);
     }
 
@@ -630,7 +593,7 @@ class phpOCR
     public static function defineImg($imgFile, $template)
     {
         $img = self::openImg($imgFile);
-        $imgs = self::divideToChar($img);
+        $imgs = self::divideByChar($img);
         $text = '';
         foreach ($imgs as $line) {
             foreach ($line as $word) {

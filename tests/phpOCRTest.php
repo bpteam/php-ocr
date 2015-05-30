@@ -15,7 +15,13 @@ use \ReflectionClass;
 
 class phpOCRTest extends PHPUnit_Framework_TestCase
 {
-    protected static function getMethod($name, $className = 'phpOCR')
+
+    /**
+     * @param        $name
+     * @param string $className
+     * @return \ReflectionMethod
+     */
+    protected static function getMethod($name, $className = 'bpteam\phpOCR\phpOCR')
     {
         $class = new ReflectionClass($className);
         $method = $class->getMethod($name);
@@ -23,6 +29,11 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
         return $method;
     }
 
+    /**
+     * @param        $name
+     * @param string $className
+     * @return \ReflectionProperty
+     */
     protected static function getProperty($name, $className = 'phpOCR')
     {
         $class = new ReflectionClass($className);
@@ -39,4 +50,166 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('gd', get_resource_type($imgString));
     }
 
+    public function testGetColorsIndex()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndex')->invoke(null, $img);
+        $this->assertArrayHasKey('index', $data);
+        $this->isTrue(is_array($data['index']));
+        $this->assertGreaterThanOrEqual(2, count($data['index']));
+        $this->assertArrayHasKey('pix', $data);
+        $this->isTrue(is_array($data['pix']));
+        $this->assertGreaterThanOrEqual(2, count($data['pix']));
+        $this->isTrue(isset($data['pix'][0][0]));
+        $this->isTrue(isset($data['pix'][1][1]));
+    }
+
+    public function testGetBrightnessFromIndex()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $colors = self::getMethod('getColorsIndex')->invoke(null, $img);
+        $colors['index'] = array_keys($colors['index']);
+        $data = self::getMethod('getBrightnessFromIndex')->invoke(null, $img, array_shift($colors['index']));
+        $this->assertGreaterThan(100, $data);
+    }
+
+    public function testGetColorsIndexTextAndBackground()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $img);
+        $this->assertArrayHasKey('text', $data);
+        $this->assertArrayHasKey('background', $data);
+        $this->assertArrayHasKey('pix', $data);
+        $this->isTrue(is_array($data['text']));
+        $this->isTrue(is_array($data['pix']));
+        $this->assertGreaterThanOrEqual(2, count($data['text']));
+        $this->assertGreaterThanOrEqual(2, count($data['pix']));
+        $this->isTrue(isset($data['pix'][0][0]));
+        $this->isTrue(isset($data['pix'][1][1]));
+    }
+
+    public function testGetMidColorFromIndexes()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $img);
+        $data = self::getMethod('getMidColorFromIndexes')->invoke(null, $img, $data['text']);
+        $this->assertArrayHasKey('red', $data);
+        $this->assertArrayHasKey('green', $data);
+        $this->assertArrayHasKey('blue', $data);
+        $this->assertGreaterThanOrEqual(0, $data['red']);
+        $this->assertGreaterThanOrEqual(0, $data['green']);
+        $this->assertGreaterThanOrEqual(0, $data['blue']);
+    }
+
+    public function testChangeBackgroundBrightness()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('changeBackgroundBrightness')->invoke(null, $img);
+        $this->assertEquals('gd', get_resource_type($data));
+        $colors = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $data);
+        $color = imagecolorsforindex($img, $colors['background']);
+        $this->assertArrayHasKey('red', $color);
+        $this->assertArrayHasKey('green', $color);
+        $this->assertArrayHasKey('blue', $color);
+        $this->assertEquals(255, $color['red']);
+        $this->assertEquals(255, $color['green']);
+        $this->assertEquals(255, $color['blue']);
+
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1_negative.png');
+        $data = self::getMethod('changeBackgroundBrightness')->invoke(null, $img);
+        $this->assertEquals('gd', get_resource_type($data));
+        $colors = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $data);
+        $color = imagecolorsforindex($img, $colors['background']);
+        $this->assertArrayHasKey('red', $color);
+        $this->assertArrayHasKey('green', $color);
+        $this->assertArrayHasKey('blue', $color);
+        $this->assertGreaterThanOrEqual(230, $color['red']);
+        $this->assertGreaterThanOrEqual(230, $color['green']);
+        $this->assertGreaterThanOrEqual(230, $color['blue']);
+    }
+
+    public function testBoldText()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $boldImg = self::getMethod('boldText')->invoke(null, $img);
+        $width = imagesx($img);
+        $height = imagesy($img);
+        $colorBoldImg = $colorImg = 0;
+        for ($x = 0; $x < $width; $x++) {
+            for ($y = 0; $y < $height; $y++) {
+                $colorImg += array_sum(imagecolorsforindex($img, imagecolorat($img, $x, $y)));
+                $colorBoldImg += array_sum(imagecolorsforindex($boldImg, imagecolorat($boldImg, $x, $y)));
+            }
+        }
+        $this->assertGreaterThan($colorBoldImg, $colorImg);
+    }
+
+    public function testCoordinatesImg()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $coordinates = self::getMethod('coordinatesImg')->invoke(null, $img);
+        $this->assertArrayHasKey('start', $coordinates);
+        $this->assertArrayHasKey('end', $coordinates);
+        $this->assertCount(2, $coordinates['start']);
+        $this->assertCount(2, $coordinates['end']);
+        foreach ($coordinates['start'] as $key => $start) {
+            $end = $coordinates['end'][$key];
+            $this->assertNotEmpty($end);
+            $this->assertGreaterThan($start, $end);
+        }
+    }
+
+    public function testDivideByLine()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('divideByLine')->invoke(null, $img);
+        $this->assertCount(2, $lines);
+        foreach ($lines as $line) {
+            $this->assertEquals('gd', get_resource_type($line));
+        }
+    }
+
+    public function testDivideByWord()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('divideByWord')->invoke(null, $img);
+        $this->assertCount(2, $lines);
+        foreach ($lines as $line) {
+            foreach ($line as $word) {
+                $this->assertEquals('gd', get_resource_type($word));
+            }
+        }
+    }
+
+    public function testDivideByChar()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('divideByChar')->invoke(null, $img);
+        $this->assertCount(2, $lines);
+        foreach ($lines as $line) {
+            foreach ($line as $words) {
+                foreach ($words as $char) {
+                    $this->assertEquals('gd', get_resource_type($char));
+                }
+            }
+        }
+    }
+
+    public function testResizeImg()
+    {
+        $img = imagecreatetruecolor(21, 33);
+        $resizeImg = self::getMethod('resizeImg')->invoke(null, $img, 7, 11);
+        $this->assertEquals('gd', get_resource_type($resizeImg));
+        $this->assertEquals(7, imagesx($resizeImg));
+        $this->assertEquals(11, imagesy($resizeImg));
+    }
+
+    public function testGenerateTemplateChar()
+    {
+        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $width = imagesx($img);
+        $height = imagesy($img);
+        $template = phpOCR::generateTemplateChar($img, $width, $height);
+        $this->assertEquals(preg_match_all('%[01]%', $template), $width * $height);
+    }
 }
