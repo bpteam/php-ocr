@@ -1,5 +1,6 @@
 OCR based on templates
 
+[![Build Status](https://travis-ci.org/bpteam/gd2-php-ocr.svg?branch=master)](https://travis-ci.org/bpteam/gd2-php-ocr)
 
 Examples ./example/speed_test.php
 
