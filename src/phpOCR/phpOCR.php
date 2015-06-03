@@ -40,6 +40,16 @@ class phpOCR
      */
     public static function openImg($imgFile)
     {
+        $img = self::open($imgFile);
+        if ($img) {
+            $img = self::changeBackgroundBrightness($img);
+            $img = self::addBorder($img);
+        }
+        return $img;
+    }
+
+    protected static function open($imgFile)
+    {
         $format = false;
         if (file_exists($imgFile)) {
             $info = getimagesize($imgFile);
@@ -48,24 +58,18 @@ class phpOCR
 
         switch ($format) {
             case IMAGETYPE_PNG :
-                $tmpImg = self::openPNG($imgFile);
+                $img = self::openPNG($imgFile);
                 break;
             case IMAGETYPE_JPEG :
-                $tmpImg = imagecreatefromjpeg($imgFile);
+                $img = imagecreatefromjpeg($imgFile);
                 break;
             case IMAGETYPE_GIF :
-                $tmpImg = imagecreatefromgif($imgFile);
+                $img = imagecreatefromgif($imgFile);
                 break;
             default:
-                $tmpImg = self::openUnknown($imgFile);
+                $img = self::openUnknown($imgFile);
                 break;
         }
-        $img = null;
-        if ($tmpImg) {
-            $tmpImg = self::changeBackgroundBrightness($tmpImg);
-            $img = self::addBorder($tmpImg);
-        }
-
         return $img;
     }
 
@@ -85,12 +89,12 @@ class phpOCR
     protected static function openUnknown($img)
     {
         if ($tmpImg2 = imagecreatefromstring($img)) {
-            $info[0] = imagesx($tmpImg2);
-            $info[1] = imagesy($tmpImg2);
-            $tmpImg = imagecreatetruecolor($info[0], $info[1]);
+            $wight = imagesx($tmpImg2);
+            $height = imagesy($tmpImg2);
+            $tmpImg = imagecreatetruecolor($wight, $height);
             $white = imagecolorallocate($tmpImg, 255, 255, 255);
             imagefill($tmpImg, 0, 0, $white);
-            imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $info[0], $info[1]);
+            imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $wight, $height);
             imagedestroy($tmpImg2);
         } else {
             $tmpImg = imagecreatefromgd($img);
