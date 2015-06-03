@@ -11,11 +11,6 @@ namespace bpteam\phpOCR;
  */
 class phpOCR
 {
-    /**
-     * Изображение которое будем обрабатывать
-     * @var resource
-     */
-    public static $img;
 
     /**
      * Добавляет к краям изображения количество пикселей для удобного разрезания
@@ -45,15 +40,15 @@ class phpOCR
      */
     public static function openImg($imgFile)
     {
-        $info = @getimagesize($imgFile);
-        switch ($info[2]) {
+        $format = false;
+        if (file_exists($imgFile)) {
+            $info = getimagesize($imgFile);
+            $format = $info[2];
+        }
+
+        switch ($format) {
             case IMAGETYPE_PNG :
-                $tmpImg2 = imagecreatefrompng($imgFile);
-                $tmpImg = imagecreatetruecolor($info[0], $info[1]);
-                $white = imagecolorallocate($tmpImg, 255, 255, 255);
-                imagefill($tmpImg, 0, 0, $white);
-                imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $info[0], $info[1]);
-                imagedestroy($tmpImg2);
+                $tmpImg = self::openPNG($imgFile);
                 break;
             case IMAGETYPE_JPEG :
                 $tmpImg = imagecreatefromjpeg($imgFile);
@@ -62,29 +57,45 @@ class phpOCR
                 $tmpImg = imagecreatefromgif($imgFile);
                 break;
             default:
-                if ($tmpImg2 = @imagecreatefromstring($imgFile)) {
-                    $info[0] = imagesx($tmpImg2);
-                    $info[1] = imagesy($tmpImg2);
-                    $tmpImg = imagecreatetruecolor($info[0], $info[1]);
-                    $white = imagecolorallocate($tmpImg, 255, 255, 255);
-                    imagefill($tmpImg, 0, 0, $white);
-                    imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $info[0], $info[1]);
-                    imagedestroy($tmpImg2);
-                } elseif ($tmpImg = @imagecreatefromgd($imgFile)) {
-                } else {
-                    return false;
-                }
+                $tmpImg = self::openUnknown($imgFile);
                 break;
         }
-        $imgInfo[0] = imagesx($tmpImg);
-        $imgInfo[1] = imagesy($tmpImg);
-        self::$img = imagecreatetruecolor($imgInfo[0] + (self::$sizeBorder * 2), $imgInfo[1] + (self::$sizeBorder * 2));
-        $white = imagecolorallocate(self::$img, 255, 255, 255);
-        imagefill(self::$img, 0, 0, $white);
-        $tmpImg = self::changeBackgroundBrightness($tmpImg);
-        imagecopy(self::$img, $tmpImg, self::$sizeBorder, self::$sizeBorder, 0, 0, $imgInfo[0], $imgInfo[1]);
+        $img = null;
+        if ($tmpImg) {
+            $tmpImg = self::changeBackgroundBrightness($tmpImg);
+            $img = self::addBorder($tmpImg);
+        }
 
-        return self::$img;
+        return $img;
+    }
+
+    protected static function openPNG($file)
+    {
+        $tmpImg2 = imagecreatefrompng($file);
+        $wight = imagesx($tmpImg2);
+        $height = imagesy($tmpImg2);
+        $tmpImg = imagecreatetruecolor($wight, $height);
+        $white = imagecolorallocate($tmpImg, 255, 255, 255);
+        imagefill($tmpImg, 0, 0, $white);
+        imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $wight, $height);
+        imagedestroy($tmpImg2);
+        return $tmpImg;
+    }
+
+    protected static function openUnknown($img)
+    {
+        if ($tmpImg2 = imagecreatefromstring($img)) {
+            $info[0] = imagesx($tmpImg2);
+            $info[1] = imagesy($tmpImg2);
+            $tmpImg = imagecreatetruecolor($info[0], $info[1]);
+            $white = imagecolorallocate($tmpImg, 255, 255, 255);
+            imagefill($tmpImg, 0, 0, $white);
+            imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $info[0], $info[1]);
+            imagedestroy($tmpImg2);
+        } else {
+            $tmpImg = imagecreatefromgd($img);
+        }
+        return $tmpImg;
     }
 
     /**
@@ -128,16 +139,13 @@ class phpOCR
         $indexes['pix'] = $countColors['pix'];
         // Собираем все цвета отличные от фона
         $backgroundBrightness = self::getBrightnessFromIndex($img, $backgroundIndex);
-        $backgroundBrightness = $backgroundBrightness - ($backgroundBrightness * 0.2);
+        $backgroundBrightness -= $backgroundBrightness * 0.2;
         foreach ($countColors['index'] as $colorKey => $colorValue) {
             $colorBrightness = self::getBrightnessFromIndex($img, $colorValue);
-            if ($backgroundBrightness < ($colorBrightness + self::$colorDiff)) {
+            if ($backgroundBrightness < ($colorBrightness + self::$colorDiff))
                 unset($countColors['index'][$colorKey]);
-            }
         }
         $indexes['text'] = $countColors['index'];
-        $indexes['background'] = $backgroundIndex;
-        $indexes['pix'] = $countColors['pix'];
 
         return $indexes;
     }
@@ -184,6 +192,17 @@ class phpOCR
             $midColor['blue'] += $color['blue'];
         }
         return $midColor;
+    }
+
+    protected static function addBorder($img, $red = 255, $green = 255, $blue = 255)
+    {
+        $imgWidth = imagesx($img);
+        $imgHeight = imagesy($img);
+        $imgSrc = imagecreatetruecolor($imgWidth + (self::$sizeBorder * 2), $imgHeight + (self::$sizeBorder * 2));
+        $borderColor = imagecolorallocate($imgSrc, $red, $green, $blue);
+        imagefill($imgSrc, 0, 0, $borderColor);
+        imagecopy($imgSrc, $img, self::$sizeBorder, self::$sizeBorder, 0, 0, $imgWidth, $imgHeight);
+        return $imgSrc;
     }
 
     public static function getSizeBorder()
@@ -255,13 +274,11 @@ class phpOCR
         // Нарезаем на полоски с текстом
         $imgLine = [];
         foreach ($topLine as $key => $value) {
-            $width = $imgWidth + (self::$sizeBorder * 2);
-            $height = $bottomLine[$key] - $topLine[$key] + (self::$sizeBorder * 2);
-            $imgLine[$key] = imagecreatetruecolor($width, $height);
-            $white = imagecolorallocate($imgLine[$key], 255, 255, 255);
-            imagefill($imgLine[$key], 0, 0, $white);
-            $src_h = $bottomLine[$key] - $topLine[$key];
-            imagecopy($imgLine[$key], $img, self::$sizeBorder, self::$sizeBorder, 0, $topLine[$key], $imgWidth, $src_h);
+            $width = $imgWidth;
+            $height = $bottomLine[$key] - $topLine[$key];
+            $line = imagecreatetruecolor($width, $height);
+            imagecopy($line, $img, 0, 0, 0, $topLine[$key], $width, $height);
+            $imgLine[] = self::addBorder($line);
         }
 
         return $imgLine;
@@ -283,15 +300,11 @@ class phpOCR
             $endWord = $coordinates['end'];
             // Нарезаем на слова
             foreach ($beginWord as $beginKey => $beginValue) {
-                $width = $endWord[$beginKey] - $beginValue + (self::$sizeBorder * 2);
-                $height = $lineHeight + (self::$sizeBorder * 2);
+                $width = $endWord[$beginKey] - $beginValue;
+                $height = $lineHeight;
                 $word = imagecreatetruecolor($width, $height);
-                $white = imagecolorallocate($word, 255, 255, 255);
-                imagefill($word, 0, 0, $white);
-                $dst_x = self::$sizeBorder;
-                $dst_y = self::$sizeBorder;
-                $src_w = $endWord[$beginKey] - $beginValue;
-                imagecopy($word, $lineValue, $dst_x, $dst_y, $beginValue, 0, $src_w, $lineHeight);
+                imagecopy($word, $lineValue, 0, 0, $beginValue, 0, $width, $height);
+                $word = self::addBorder($word);
                 $imgWord[$lineKey][] = $word;
             }
         }
@@ -431,13 +444,13 @@ class phpOCR
     {
         $colorIndexes = self::getColorsIndexTextAndBackground($img);
         $colorTextIndexes = array_flip($colorIndexes['text']);
-        $imgInfo['x'] = imagesx($img);
-        $imgInfo['y'] = imagesy($img);
-        $blurImg = imagecreatetruecolor($imgInfo['x'], $imgInfo['y']);
-        imagecopy($blurImg, $img, 0, 0, 0, 0, $imgInfo['x'], $imgInfo['y']);
+        $width = imagesx($img);
+        $height = imagesy($img);
+        $blurImg = imagecreatetruecolor($width, $height);
+        imagecopy($blurImg, $img, 0, 0, 0, 0, $width, $height);
         $black = imagecolorallocate($blurImg, 0, 0, 0);
-        for ($x = 0; $x < $imgInfo['x']; $x++) {
-            for ($y = 0; $y < $imgInfo['y']; $y++) {
+        for ($x = 0; $x < $width; $x++) {
+            for ($y = 0; $y < $height; $y++) {
                 if (isset($colorTextIndexes[$colorIndexes['pix'][$x][$y]])) {
                     if ($bType == self::WIDTH) {
                         imagefilledrectangle($blurImg, $x - self::$boldSize, $y, $x + self::$boldSize, $y, $black);
@@ -650,24 +663,12 @@ class phpOCR
             $dirToSave ='tmp/';
         if (is_array($img)) {
             foreach ($img as $key => $value) {
-                if (is_array($value)) {
-                    self::showImg($value, $extension);
-                } else {
-                    $t = rand();
-                    $picName = $dirToSave . 'img' . $prefix . $t . $key . '.' . $extension;
-                    $fh = fopen($picName, 'w+');
-                    fwrite($fh, '');
-                    fclose($fh);
-                    imagepng($value, $picName, 9);
-                    echo "<img src='" . $picName . "'></br>\n";
-                }
+                self::showImg($value, $extension);
             }
         } else {
-            $t = rand();
-            $picName = $dirToSave . 'img' . $prefix . $t . '.' . $extension;
-            $fh = fopen($picName, 'w+');
-            fwrite($fh, '');
-            fclose($fh);
+            $random = rand();
+            $picName = $dirToSave . 'img' . $prefix . $random . '.' . $extension;
+            file_put_contents($picName, '');
             imagepng($img, $picName, 9);
             echo "<img src='" . $picName . "'></br>\n";
         }
