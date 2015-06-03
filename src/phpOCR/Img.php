@@ -94,7 +94,7 @@ class Img {
     public static function show($img, $extension = 'png', $prefix = 0, $dirToSave = false)
     {
         if (!$dirToSave)
-            $dirToSave ='tmp/';
+            $dirToSave = 'example/tmp/';
         if (is_array($img)) {
             foreach ($img as $key => $value) {
                 self::show($value, $extension);
@@ -102,7 +102,9 @@ class Img {
         } else {
             $random = rand();
             $picName = $dirToSave . 'img' . $prefix . $random . '.' . $extension;
-            file_put_contents($picName, '');
+            $fileHead = fopen($picName, 'w+');
+            fwrite($fileHead, '');
+            fclose($fileHead);
             imagepng($img, $picName, 9);
             echo "<img src='" . $picName . "'></br>\n";
         }
