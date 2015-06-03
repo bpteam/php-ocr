@@ -3,6 +3,3 @@ languages:
   PHP: true
 exclude_paths:
  - "tests/phpOCRTest.php"
-
-after_script:
-   - ./vendor/bin/test-reporter

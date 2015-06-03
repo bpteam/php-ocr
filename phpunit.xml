@@ -1,4 +1,4 @@
-<phpunit bootstrap="../loader.php">
+<phpunit bootstrap="loader.php">
     <filter>
         <whitelist>
             <directory>/src</directory>
