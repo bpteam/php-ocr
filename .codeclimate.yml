@@ -4,5 +4,5 @@ languages:
 exclude_paths:
  - "tests/phpOCRTest.php"
 
- after_script:
+after_script:
    - ./vendor/bin/test-reporter
