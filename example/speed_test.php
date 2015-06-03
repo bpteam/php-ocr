@@ -12,26 +12,27 @@ set_time_limit(600);
 
 require_once __DIR__ . '/../loader.php';
 
-use bpteam\phpOCR\phpOCR;
+use bpteam\phpOCR\Img;
+use bpteam\phpOCR\Recognizer;
 
 $startMem = memory_get_usage()/1024;
 $startTime = microtime(true);
 $file_name = __DIR__ . '/../template/test_img/olx1.png';
 $ex = 'png';
-phpOCR::setInfelicity(10);
-$img = phpOCR::openImg($file_name);
+Recognizer::setInfelicity(10);
+$img = Img::open($file_name);
 //Source image
 echo "<br>Step 0 src img<br>";
-phpOCR::showImg($img,$ex,100);
+Img::show($img,$ex,100);
 
 //load template
 $name = 'olx';
-phpOCR::setTemplateDir(__DIR__ . '/../template/');
-$template = phpOCR::loadTemplate($name);
+Recognizer::setTemplateDir(__DIR__ . '/../template/');
+$template = Recognizer::loadTemplate($name);
 
 // OCR
 echo "<br>defineImg<br>";
-$text = phpOCR::defineImg($file_name, $template);
+$text = Recognizer::read($file_name, $template);
 echo $text."<br>";
 
 $endMem = memory_get_usage()/1024;

@@ -9,98 +9,22 @@ namespace bpteam\phpOCR;
  * Класс для распознования символов по шаблону
  * @package phpOCR\cOCR
  */
-class phpOCR
+class Divider
 {
-
-    /**
-     * Добавляет к краям изображения количество пикселей для удобного разрезания
-     * @var int
-     */
-    protected static $sizeBorder = 2;
 
     protected static $colorDiff = 50;
 
-    /**
-     * Погрешность в сравнении с шаблоном в процентах
-     * @var float
-     */
-    protected static $infelicity = 10;
-
     public static $boldSize = 1;
-
-    protected static $templateDir = null;
 
     const WIDTH = 1;
 
     const HEIGHT = 2;
 
     /**
-     * @param string $imgFile Имя файла с исображением
-     * @return bool|resource
+     * Добавляет к краям изображения количество пикселей для удобного разрезания
+     * @var int
      */
-    public static function openImg($imgFile)
-    {
-        $img = self::open($imgFile);
-        if ($img) {
-            $img = self::changeBackgroundBrightness($img);
-            $img = self::addBorder($img);
-        }
-        return $img;
-    }
-
-    protected static function open($imgFile)
-    {
-        $format = false;
-        if (file_exists($imgFile)) {
-            $info = getimagesize($imgFile);
-            $format = $info[2];
-        }
-
-        switch ($format) {
-            case IMAGETYPE_PNG :
-                $img = self::openPNG($imgFile);
-                break;
-            case IMAGETYPE_JPEG :
-                $img = imagecreatefromjpeg($imgFile);
-                break;
-            case IMAGETYPE_GIF :
-                $img = imagecreatefromgif($imgFile);
-                break;
-            default:
-                $img = self::openUnknown($imgFile);
-                break;
-        }
-        return $img;
-    }
-
-    protected static function openPNG($file)
-    {
-        $tmpImg2 = imagecreatefrompng($file);
-        $wight = imagesx($tmpImg2);
-        $height = imagesy($tmpImg2);
-        $tmpImg = imagecreatetruecolor($wight, $height);
-        $white = imagecolorallocate($tmpImg, 255, 255, 255);
-        imagefill($tmpImg, 0, 0, $white);
-        imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $wight, $height);
-        imagedestroy($tmpImg2);
-        return $tmpImg;
-    }
-
-    protected static function openUnknown($img)
-    {
-        if ($tmpImg2 = imagecreatefromstring($img)) {
-            $wight = imagesx($tmpImg2);
-            $height = imagesy($tmpImg2);
-            $tmpImg = imagecreatetruecolor($wight, $height);
-            $white = imagecolorallocate($tmpImg, 255, 255, 255);
-            imagefill($tmpImg, 0, 0, $white);
-            imagecopy($tmpImg, $tmpImg2, 0, 0, 0, 0, $wight, $height);
-            imagedestroy($tmpImg2);
-        } else {
-            $tmpImg = imagecreatefromgd($img);
-        }
-        return $tmpImg;
-    }
+    protected static $sizeBorder = 2;
 
     /**
      * Подсчитываем количество цветов в изображении и их долю в палитре
@@ -134,7 +58,7 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    protected static function getColorsIndexTextAndBackground($img)
+    public static function getColorsIndexTextAndBackground($img)
     {
         $countColors = self::getColorsIndex($img);
         $countColors['index'] = array_keys($countColors['index']);
@@ -142,10 +66,10 @@ class phpOCR
         $indexes['background'] = $backgroundIndex;
         $indexes['pix'] = $countColors['pix'];
         // Собираем все цвета отличные от фона
-        $backgroundBrightness = self::getBrightnessFromIndex($img, $backgroundIndex);
+        $backgroundBrightness = Img::getBrightnessFromIndex($img, $backgroundIndex);
         $backgroundBrightness -= $backgroundBrightness * 0.2;
         foreach ($countColors['index'] as $colorKey => $colorValue) {
-            $colorBrightness = self::getBrightnessFromIndex($img, $colorValue);
+            $colorBrightness = Img::getBrightnessFromIndex($img, $colorValue);
             if ($backgroundBrightness < ($colorBrightness + self::$colorDiff))
                 unset($countColors['index'][$colorKey]);
         }
@@ -162,9 +86,9 @@ class phpOCR
     public static function changeBackgroundBrightness($img)
     {
         $colorIndexes = self::getColorsIndexTextAndBackground($img);
-        $brightnessBackground = self::getBrightnessFromIndex($img, $colorIndexes['background']);
+        $brightnessBackground = Img::getBrightnessFromIndex($img, $colorIndexes['background']);
         if ($colorIndexes['text']) {
-            $midColor = self::getMidColorFromIndexes($img, $colorIndexes['text']);
+            $midColor = Img::getMidColorFromIndexes($img, $colorIndexes['text']);
             $brightnessText = ($midColor['red'] + $midColor['green'] + $midColor['blue']) / 3;
         } else {
             $brightnessText = 255;
@@ -178,27 +102,7 @@ class phpOCR
         return $img;
     }
 
-    /**
-     * Подсчитывает средний цвет из массива индексов
-     * @param resource $img
-     * @param array    $arrayIndexes
-     * @return array
-     */
-    protected static function getMidColorFromIndexes($img, $arrayIndexes)
-    {
-        $midColor['red'] = 0;
-        $midColor['green'] = 0;
-        $midColor['blue'] = 0;
-        foreach ($arrayIndexes as $key => $value) {
-            $color = imagecolorsforindex($img, $key);
-            $midColor['red'] += $color['red'];
-            $midColor['green'] += $color['green'];
-            $midColor['blue'] += $color['blue'];
-        }
-        return $midColor;
-    }
-
-    protected static function addBorder($img, $red = 255, $green = 255, $blue = 255)
+    public static function addBorder($img, $red = 255, $green = 255, $blue = 255)
     {
         $imgWidth = imagesx($img);
         $imgHeight = imagesy($img);
@@ -219,38 +123,12 @@ class phpOCR
         self::$sizeBorder = $val;
     }
 
-    public static function getInfelicity()
-    {
-        return self::$infelicity;
-    }
-
-    public static function setInfelicity($val)
-    {
-        self::$infelicity = $val;
-    }
-
-    /**
-     * @return boolean|string
-     */
-    public static function getTemplateDir()
-    {
-        return self::$templateDir;
-    }
-
-    /**
-     * @param boolean|string $templateDir
-     */
-    public static function setTemplateDir($templateDir)
-    {
-        self::$templateDir = $templateDir;
-    }
-
     /**
      * Разбивает рисунок на строки с текстом
      * @param resource $img
      * @return array
      */
-    protected static function divideByLine($img)
+    protected static function byLine($img)
     {
         $imgWidth = imagesx($img);
         $imgHeight = imagesy($img);
@@ -293,9 +171,9 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    protected static function divideByWord($img)
+    protected static function byWord($img)
     {
-        $imgLine = self::divideByLine($img);
+        $imgLine = self::byLine($img);
         $imgWord = [];
         foreach ($imgLine as $lineKey => $lineValue) {
             $lineHeight = imagesy($lineValue);
@@ -321,9 +199,9 @@ class phpOCR
      * @param resource $img
      * @return array
      */
-    public static function divideByChar($img)
+    public static function byChar($img)
     {
-        $imgWord = self::divideByWord($img);
+        $imgWord = self::byWord($img);
         $imgChars = [];
         foreach ($imgWord as $lineKey => $lineValue) {
             foreach ($lineValue as $wordKey => $wordValue) {
@@ -375,8 +253,8 @@ class phpOCR
             $brightnessLines[$currentY] = 0;
             $brightnessLinesNormal[$currentY] = 0;
             for ($currentX = 0; $currentX < $width; $currentX++) {
-                $brightnessLines[$currentY] += self::getBrightnessFromIndex($img, $colorsIndexBold['pix'][$currentX][$currentY]);
-                $brightnessLinesNormal[$currentY] += self::getBrightnessFromIndex($img, $colorsIndex['pix'][$currentX][$currentY]);
+                $brightnessLines[$currentY] += Img::getBrightnessFromIndex($img, $colorsIndexBold['pix'][$currentX][$currentY]);
+                $brightnessLinesNormal[$currentY] += Img::getBrightnessFromIndex($img, $colorsIndex['pix'][$currentX][$currentY]);
             }
             $brightnessLines[$currentY] /= $width;
             $brightnessImg += $brightnessLinesNormal[$currentY] / $width;
@@ -431,19 +309,6 @@ class phpOCR
     }
 
     /**
-     * Вычисляем яркость цвета по его индексу
-     * @param resource $img
-     * @param int      $colorIndex
-     * @return int
-     */
-    protected static function getBrightnessFromIndex($img, $colorIndex)
-    {
-        $color = imagecolorsforindex($img, $colorIndex);
-
-        return ($color['red'] + $color['green'] + $color['blue']) / 3;
-    }
-
-    /**
      * Заливаем текст для более точного определения по яркости
      * @param resource $img
      * @param int   $bType тип утолщения WIDTH or HEIGHT
@@ -470,216 +335,5 @@ class phpOCR
             }
         }
         return $blurImg;
-    }
-
-    /**
-     * Прапорциональное изменение размера изображения
-     * @param resource $img   изображение
-     * @param int      $width ширина
-     * @param int      $height высота
-     * @return resource
-     */
-    protected static function resizeImg($img, $width, $height)
-    {
-        $imgInfo['x'] = imagesx($img);
-        $imgInfo['y'] = imagesy($img);
-        $newImg = imagecreatetruecolor($width, $height);
-        $white = imagecolorallocate($newImg, 255, 255, 255);
-        imagefill($newImg, 0, 0, $white);
-        if ($imgInfo['x'] < $imgInfo['y']) {
-            $width = $imgInfo['x'] * ($height / $imgInfo['y']);
-        } else {
-            $height = $imgInfo['y'] * ($width / $imgInfo['x']);
-        }
-        imagecopyresampled($newImg, $img, 0, 0, 0, 0, $width, $height, $imgInfo['x'], $imgInfo['y']);
-
-        return $newImg;
-    }
-
-
-    /**
-     * Генерация шаблона из одного символа
-     * @param resource $img
-     * @param int      $width
-     * @param int      $height
-     * @return string
-     */
-    public static function generateTemplateChar($img, $width = 15, $height = 16)
-    {
-        $imgInfo['x'] = imagesx($img);
-        $imgInfo['y'] = imagesy($img);
-        if ($imgInfo['x'] != $width || $imgInfo['y'] != $height) {
-            $img = self::resizeImg($img, $width, $height);
-        }
-        $colorIndexes = self::getColorsIndexTextAndBackground($img);
-        $colorTextIndexes = array_flip($colorIndexes['text']);
-        $line = '';
-        for ($y = 0; $y < $height; $y++) {
-            for ($x = 0; $x < $width; $x++) {
-                if (isset($colorTextIndexes[$colorIndexes['pix'][$x][$y]])) {
-                    $line .= '1';
-                } else {
-                    $line .= '0';
-                }
-            }
-        }
-        return $line;
-    }
-
-    /**
-     * Генерация шаблона для распознования
-     * @param array $chars Массив string из символов в последовательности как на картинках
-     * @param array $imgs  Массив resource из изображений для создания шаблона
-     * @return array|bool
-     */
-    public static function generateTemplate($chars, $imgs)
-    {
-        if (count($chars) != count($imgs)) {
-            return false;
-        }
-        $template = [];
-        foreach ($chars as $charKey => $charValue) {
-            $template[$charValue] = self::generateTemplateChar($imgs[$charKey]);
-        }
-
-        return $template;
-    }
-
-    /**
-     * Сохранение шаблона в файл
-     * @param string $name     Имя шаблона
-     * @param array  $template шаблон
-     */
-    public static function saveTemplate($name, $template)
-    {
-        $json = json_encode($template);
-        $name = self::getTemplateDir() . $name . '.json';
-        file_put_contents($name, $json);
-    }
-
-    /**
-     * Загрузка шаблона из файла
-     * @param string $name имя шаблона
-     * @return array|bool
-     */
-    public static function loadTemplate($name)
-    {
-        if (!self::getTemplateDir()) {
-            self::setTemplateDir(__DIR__ . '/template/');
-        }
-        $name = self::getTemplateDir() . $name . '.json';
-        $json = file_get_contents($name);
-
-        return json_decode($json, true);
-    }
-
-    /**
-     * Распознование символа по шаблону
-     * @param resource $img
-     * @param array    $template
-     * @return int|string
-     */
-    protected static function defineChar($img, $template)
-    {
-        $templateChar = self::generateTemplateChar($img);
-        foreach ($template as $key => $value) {
-            if (self::compareChar($templateChar, $key)) {
-                return $value;
-            }
-        }
-        return '?';
-    }
-
-    /**
-     * Сравнивает шаблоны символов на похожесть
-     * @param string $char1 символ 1 в виде шаблона
-     * @param string $char2 символ 1 в виде шаблона
-     * @return bool
-     */
-    protected static function compareChar($char1, $char2)
-    {
-        $difference = levenshtein($char1, $char2);
-        if ($difference < strlen($char1) * (self::$infelicity / 100)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Распознование текста на изображении
-     * @param       $imgFile
-     * @param array $template
-     * @return string
-     */
-    public static function defineImg($imgFile, $template)
-    {
-        $img = self::openImg($imgFile);
-        $imgs = self::divideByChar($img);
-        $text = '';
-        foreach ($imgs as $line) {
-            foreach ($line as $word) {
-                foreach ($word as $char) {
-                    $text .= self::defineChar($char, $template);
-                }
-                if (count($word) > 1) {
-                    $text .= " ";
-                }
-            }
-            if (count($line) > 1) {
-                $text .= "\n";
-            }
-        }
-
-        return trim($text);
-    }
-
-    /**
-     * Находит уникальные символы в массиве символов
-     * @param array $imgs Масси изображений символов
-     * @return array Массив изображений уникальных символов
-     */
-    public static function findUniqueChar($imgs)
-    {
-        $templateChars = [];
-        foreach ($imgs as $value) {
-            $templateChars[] = self::generateTemplateChar($value);
-        }
-        $templateChars = array_unique($templateChars);
-        $cloneKey = [];
-        foreach ($templateChars as $key => $value) {
-            foreach (array_slice($templateChars, $key, null, true) as $tmpKey => $tmpValue) {
-                if (self::compareChar($value, $tmpValue) && $key != $tmpKey) {
-                    $cloneKey[] = $tmpKey;
-                }
-            }
-        }
-        foreach ($cloneKey as $value) {
-            unset($templateChars[$value]);
-        }
-
-        $newImgs = [];
-        foreach ($templateChars as $key => $value) {
-            $newImgs[] = $imgs[$key];
-        }
-
-        return $newImgs;
-    }
-
-    public static function showImg($img, $extension = 'png', $prefix = 0, $dirToSave = false)
-    {
-        if (!$dirToSave)
-            $dirToSave ='tmp/';
-        if (is_array($img)) {
-            foreach ($img as $key => $value) {
-                self::showImg($value, $extension);
-            }
-        } else {
-            $random = rand();
-            $picName = $dirToSave . 'img' . $prefix . $random . '.' . $extension;
-            file_put_contents($picName, '');
-            imagepng($img, $picName, 9);
-            echo "<img src='" . $picName . "'></br>\n";
-        }
     }
 }

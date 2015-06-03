@@ -21,7 +21,7 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
      * @param string $className
      * @return \ReflectionMethod
      */
-    protected static function getMethod($name, $className = 'bpteam\phpOCR\phpOCR')
+    protected static function getMethod($name, $className = 'bpteam\phpOCR\Recognizer')
     {
         $class = new ReflectionClass($className);
         $method = $class->getMethod($name);
@@ -34,7 +34,7 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
      * @param string $className
      * @return \ReflectionProperty
      */
-    protected static function getProperty($name, $className = 'phpOCR')
+    protected static function getProperty($name, $className = 'bpteam\phpOCR\phpOCR')
     {
         $class = new ReflectionClass($className);
         $property = $class->getProperty($name);
@@ -44,16 +44,16 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testOpenImage()
     {
-        $imgFile = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $imgFile = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
         $this->assertEquals('gd', get_resource_type($imgFile));
-        $imgString = phpOCR::openImg(file_get_contents(__DIR__ . '/../template/test_img/olx1.png'));
+        $imgString = Recognizer::openImg(file_get_contents(__DIR__ . '/../template/test_img/olx1.png'));
         $this->assertEquals('gd', get_resource_type($imgString));
     }
 
     public function testGetColorsIndex()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $data = self::getMethod('getColorsIndex')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndex', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertArrayHasKey('index', $data);
         $this->isTrue(is_array($data['index']));
         $this->assertGreaterThanOrEqual(2, count($data['index']));
@@ -66,17 +66,17 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testGetBrightnessFromIndex()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $colors = self::getMethod('getColorsIndex')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $colors = self::getMethod('getColorsIndex', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $colors['index'] = array_keys($colors['index']);
-        $data = self::getMethod('getBrightnessFromIndex')->invoke(null, $img, array_shift($colors['index']));
+        $data = self::getMethod('getBrightnessFromIndex', 'bpteam\phpOCR\Img')->invoke(null, $img, array_shift($colors['index']));
         $this->assertGreaterThan(100, $data);
     }
 
     public function testGetColorsIndexTextAndBackground()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $data = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndexTextAndBackground', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertArrayHasKey('text', $data);
         $this->assertArrayHasKey('background', $data);
         $this->assertArrayHasKey('pix', $data);
@@ -90,9 +90,9 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testGetMidColorFromIndexes()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $data = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $img);
-        $data = self::getMethod('getMidColorFromIndexes')->invoke(null, $img, $data['text']);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('getColorsIndexTextAndBackground', 'bpteam\phpOCR\Divider')->invoke(null, $img);
+        $data = self::getMethod('getMidColorFromIndexes', 'bpteam\phpOCR\Img')->invoke(null, $img, $data['text']);
         $this->assertArrayHasKey('red', $data);
         $this->assertArrayHasKey('green', $data);
         $this->assertArrayHasKey('blue', $data);
@@ -103,10 +103,10 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testChangeBackgroundBrightness()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $data = self::getMethod('changeBackgroundBrightness')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $data = self::getMethod('changeBackgroundBrightness', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertEquals('gd', get_resource_type($data));
-        $colors = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $data);
+        $colors = self::getMethod('getColorsIndexTextAndBackground', 'bpteam\phpOCR\Divider')->invoke(null, $data);
         $color = imagecolorsforindex($img, $colors['background']);
         $this->assertArrayHasKey('red', $color);
         $this->assertArrayHasKey('green', $color);
@@ -115,10 +115,10 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(255, $color['green']);
         $this->assertEquals(255, $color['blue']);
 
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1_negative.png');
-        $data = self::getMethod('changeBackgroundBrightness')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1_negative.png');
+        $data = self::getMethod('changeBackgroundBrightness', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertEquals('gd', get_resource_type($data));
-        $colors = self::getMethod('getColorsIndexTextAndBackground')->invoke(null, $data);
+        $colors = self::getMethod('getColorsIndexTextAndBackground', 'bpteam\phpOCR\Divider')->invoke(null, $data);
         $color = imagecolorsforindex($img, $colors['background']);
         $this->assertArrayHasKey('red', $color);
         $this->assertArrayHasKey('green', $color);
@@ -130,8 +130,8 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testBoldText()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $boldImg = self::getMethod('boldText')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $boldImg = self::getMethod('boldText', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $width = imagesx($img);
         $height = imagesy($img);
         $colorBoldImg = $colorImg = 0;
@@ -146,8 +146,8 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testCoordinatesImg()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $coordinates = self::getMethod('coordinatesImg')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $coordinates = self::getMethod('coordinatesImg', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertArrayHasKey('start', $coordinates);
         $this->assertArrayHasKey('end', $coordinates);
         $this->assertCount(2, $coordinates['start']);
@@ -161,8 +161,8 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testDivideByLine()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $lines = self::getMethod('divideByLine')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('byLine', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertCount(2, $lines);
         foreach ($lines as $line) {
             $this->assertEquals('gd', get_resource_type($line));
@@ -171,8 +171,8 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testDivideByWord()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $lines = self::getMethod('divideByWord')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('byWord', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertCount(2, $lines);
         foreach ($lines as $line) {
             foreach ($line as $word) {
@@ -183,8 +183,8 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testDivideByChar()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $lines = self::getMethod('divideByChar')->invoke(null, $img);
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $lines = self::getMethod('byChar', 'bpteam\phpOCR\Divider')->invoke(null, $img);
         $this->assertCount(2, $lines);
         foreach ($lines as $line) {
             foreach ($line as $words) {
@@ -198,7 +198,7 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
     public function testResizeImg()
     {
         $img = imagecreatetruecolor(21, 33);
-        $resizeImg = self::getMethod('resizeImg')->invoke(null, $img, 7, 11);
+        $resizeImg = self::getMethod('resize', 'bpteam\phpOCR\Img')->invoke(null, $img, 7, 11);
         $this->assertEquals('gd', get_resource_type($resizeImg));
         $this->assertEquals(7, imagesx($resizeImg));
         $this->assertEquals(11, imagesy($resizeImg));
@@ -206,10 +206,10 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
 
     public function testGenerateTemplateChar()
     {
-        $img = phpOCR::openImg(__DIR__ . '/../template/test_img/olx1.png');
+        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
         $width = imagesx($img);
         $height = imagesy($img);
-        $template = phpOCR::generateTemplateChar($img, $width, $height);
+        $template = Recognizer::generateTemplateChar($img, $width, $height);
         $this->assertEquals(preg_match_all('%[01]%', $template), $width * $height);
     }
 }

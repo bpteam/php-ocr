@@ -9,7 +9,9 @@
  */
 require_once __DIR__ . '/../loader.php';
 
-use bpteam\phpOCR\phpOCR;
+use bpteam\phpOCR\Divider;
+use bpteam\phpOCR\Img;
+use bpteam\phpOCR\Recognizer;
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -24,10 +26,10 @@ if (!isset($_POST['Submit1'])) {
     }
     $chars = [];
     foreach ($picFiles as $key => $fileName) {
-        $img = phpOCR::openImg($fileName);
-        phpOCR::showImg($img);
-        phpOCR::setInfelicity(10);
-        $imgs = phpOCR::divideByChar($img);
+        $img = Img::open($fileName);
+        Img::show($img);
+        Recognizer::setInfelicity(10);
+        $imgs = Divider::byChar($img);
         if (is_array($imgs)) {
             $chars = array_merge($chars, $imgs);
         }
@@ -40,14 +42,14 @@ if (!isset($_POST['Submit1'])) {
             }
         }
     }
-    $chars = phpOCR::findUniqueChar($allChar);
+    $chars = Recognizer::findUniqueChar($allChar);
     ?>
     <form method="POST" action="">
         <?
         foreach ($chars as $key => $fileName) {
             $name = './tmp/' . rand() . microtime(true) . '.png';
             imagepng($fileName, $name);
-            $tmp = phpOCR::generateTemplateChar($fileName);
+            $tmp = Recognizer::generateTemplateChar($fileName);
             ?>
             <img src="<?= $name ?>"/><label>
                 <input type='text' name="template_<?= $key ?>" value=''/>
