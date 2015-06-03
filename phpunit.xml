@@ -1,11 +1,11 @@
-<phpunit bootstrap="loader.php">
+<phpunit bootstrap="bootstrap.php">
     <filter>
         <whitelist>
             <directory>/src</directory>
         </whitelist>
     </filter>
     <testsuite>
-        <directory>./</directory>
+        <directory>./tests</directory>
     </testsuite>
     <logging>
         <log type="coverage-clover" target="build/logs/clover.xml"/>

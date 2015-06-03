@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 set_time_limit(600);
 
-require_once __DIR__ . '/../loader.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use bpteam\phpOCR\Img;
 use bpteam\phpOCR\Recognizer;

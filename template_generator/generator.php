@@ -7,7 +7,7 @@
  * Project: phpOCR
  * @author: Evgeny Pynykh bpteam22@gmail.com
  */
-require_once __DIR__ . '/../loader.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use bpteam\phpOCR\Divider;
 use bpteam\phpOCR\Img;
