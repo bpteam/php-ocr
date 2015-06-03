@@ -367,32 +367,37 @@ class phpOCR
         $colorsIndex = self::getColorsIndex($img);
         $width = imagesx($boldImg);
         $height = imagesy($boldImg);
-        for ($positionY = 0; $positionY < $height; $positionY++) {
-            $brightnessLines[$positionY] = 0;
-            $brightnessLinesNormal[$positionY] = 0;
-            for ($x = 0; $x < $width; $x++) {
-                $brightnessLines[$positionY] += self::getBrightnessFromIndex($img, $colorsIndexBold['pix'][$x][$positionY]);
-                $brightnessLinesNormal[$positionY] += self::getBrightnessFromIndex($img, $colorsIndex['pix'][$x][$positionY]);
+        for ($currentY = 0; $currentY < $height; $currentY++) {
+            $brightnessLines[$currentY] = 0;
+            $brightnessLinesNormal[$currentY] = 0;
+            for ($currentX = 0; $currentX < $width; $currentX++) {
+                $brightnessLines[$currentY] += self::getBrightnessFromIndex($img, $colorsIndexBold['pix'][$currentX][$currentY]);
+                $brightnessLinesNormal[$currentY] += self::getBrightnessFromIndex($img, $colorsIndex['pix'][$currentX][$currentY]);
             }
-            $brightnessLines[$positionY] /= $width;
-            $brightnessImg += $brightnessLinesNormal[$positionY] / $width;
+            $brightnessLines[$currentY] /= $width;
+            $brightnessImg += $brightnessLinesNormal[$currentY] / $width;
         }
         $brightnessImg /= $height;
-        $coordinates['start'] = [];
-        $coordinates['end'] = [];
+
+        return self::getBlocks($brightnessLines, $brightnessImg, $height, $border);
+    }
+
+    protected static function getBlocks($brightnessLines, $brightnessImg, $height, $border)
+    {
+        $start = [];
+        $end = [];
         //search border of text
-        for ($positionY = $border; $positionY < ($height - $border); $positionY++) {
-            if (self::isTopBorder($brightnessLines, $brightnessImg, $positionY, $border)) {
-                $coordinates['start'][] = $positionY;
-            } elseif (self::isBottomBorder($brightnessLines, $brightnessImg, $positionY, $border)) {
-                $coordinates['end'][] = $positionY;
-            } elseif (self::isSpaceBetweenLines($brightnessLines, $brightnessImg, $positionY, $border)) {
-                $coordinates['start'][] = $positionY;
-                $coordinates['end'][] = $positionY;
+        for ($currentY = $border; $currentY < ($height - $border); $currentY++) {
+            if (self::isTopBorder($brightnessLines, $brightnessImg, $currentY, $border)) {
+                $start[] = $currentY;
+            } elseif (self::isBottomBorder($brightnessLines, $brightnessImg, $currentY, $border)) {
+                $end[] = $currentY;
+            } elseif (self::isSpaceBetweenLines($brightnessLines, $brightnessImg, $currentY, $border)) {
+                $start[] = $currentY;
+                $end[] = $currentY;
             }
         }
-
-        return $coordinates;
+        return ['start' => $start, 'end' => $end];
     }
 
     protected static function isTopBorder($brightnessLines, $brightnessImg, $positionY, $border)
