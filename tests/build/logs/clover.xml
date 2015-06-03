@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1433325168">
-  <project timestamp="1433325168">
+<coverage generated="1433326999">
+  <project timestamp="1433326999">
     <file name="/var/www/gd2-php-ocr/loader.php">
       <line num="13" type="stmt" count="1"/>
       <line num="14" type="stmt" count="1"/>
