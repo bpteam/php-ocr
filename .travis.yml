@@ -6,7 +6,9 @@ php:
     - 5.5
     - 5.4
 
-install: composer install
+install:
+ - composer self-update
+ - composer install
 
 before_script: chmod +x ./codeclimate.sh
 
