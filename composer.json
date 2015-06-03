@@ -17,6 +17,6 @@
     "codeclimate/php-test-reporter": "dev-master"
   },
   "autoload" : {
-    "files": ["loader.php"]
+    "files": ["bootstrap.php"]
   }
 }
