@@ -10,8 +10,8 @@ install:
  - composer self-update
  - composer install
 
-before_script: chmod +x ./codeclimate.sh
+#before_script: chmod +x ./codeclimate.sh
 
 script: phpunit --configuration phpunit.xml
 
-after_script: ./codeclimate.sh
+#after_script: ./codeclimate.sh
