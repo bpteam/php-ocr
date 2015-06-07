@@ -1,5 +1,5 @@
 {
-  "name": "bpteam/phpOCR",
+  "name": "bpteam/php-ocr",
   "description": "tiny and slow ;) php ocr class for parse simple images",
   "minimum-stability": "stable",
   "authors": [
