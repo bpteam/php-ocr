@@ -10,3 +10,5 @@ How to generate template look at ./template_generator/generator.php
 
 Extension:
 GD 2 http://libgd.bitbucket.org/
+
+[![Join the chat at https://gitter.im/bpteam/gd2-php-ocr](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bpteam/gd2-php-ocr?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
