@@ -17,6 +17,8 @@
     "codeclimate/php-test-reporter": "dev-master"
   },
   "autoload" : {
-    "files": ["bootstrap.php"]
+    "psr-4": {
+      "bpteam\\phpOCR\\": "src/phpOCR"
+    }
   }
 }
