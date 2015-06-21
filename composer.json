@@ -19,6 +19,7 @@
   "autoload" : {
     "psr-4": {
       "bpteam\\": "src/"
-    }
+    },
+    "files": ["bootstrap.php"]
   }
 }
