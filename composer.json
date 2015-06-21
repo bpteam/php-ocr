@@ -18,7 +18,7 @@
   },
   "autoload" : {
     "psr-4": {
-      "bpteam\\phpOCR\\": "src/phpOCR"
+      "bpteam\\": "src/"
     }
   }
 }
