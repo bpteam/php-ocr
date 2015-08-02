@@ -26,7 +26,7 @@ if (!isset($_POST['Submit1'])) {
     }
     $chars = [];
     foreach ($picFiles as $key => $fileName) {
-        $img = Img::open($fileName);
+        $img = Recognizer::openImg($fileName);
         Img::show($img);
         Recognizer::setInfelicity(10);
         $imgs = Divider::byChar($img);
@@ -45,7 +45,7 @@ if (!isset($_POST['Submit1'])) {
     $chars = Recognizer::findUniqueChar($allChar);
     ?>
     <form method="POST" action="">
-        <?
+        <?php
         foreach ($chars as $key => $fileName) {
             $name = './tmp/' . rand() . microtime(true) . '.png';
             imagepng($fileName, $name);
@@ -55,10 +55,10 @@ if (!isset($_POST['Submit1'])) {
                 <input type='text' name="template_<?= $key ?>" value=''/>
             </label><br/>
             <input type="hidden" name="pattern_<?= $key ?>" value="<?= $tmp ?>">
-        <?}?>
+        <?php } ?>
         <input name='Submit1' type='submit' value='Gen'>
     </form>
-<?
+<?php
 } else {
     $chars = [];
     foreach ($_POST as $key => $fileName) {
@@ -68,3 +68,4 @@ if (!isset($_POST['Submit1'])) {
     }
     echo $json = json_encode($chars, JSON_FORCE_OBJECT);
 }
+?>

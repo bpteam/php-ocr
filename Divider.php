@@ -93,17 +93,19 @@ class Divider
         } else {
             $brightnessText = 255;
         }
+
         if ($brightnessBackground < $brightnessText) {
             imagefilter($img, IMG_FILTER_NEGATE);
-            $colorIndexes = self::getColorsIndexTextAndBackground($img);
         }
-        imagecolorset($img, $colorIndexes['background'], 255, 255, 255);
 
         return $img;
     }
 
-    public static function addBorder($img, $red = 255, $green = 255, $blue = 255)
+    public static function addBorder($img, $red = null, $green = null, $blue = null)
     {
+        $red = is_int($red) ? $red : Recognizer::$background['red'];
+        $green = is_int($green) ? $green : Recognizer::$background['green'];
+        $blue = is_int($blue) ? $blue : Recognizer::$background['blue'];
         $imgWidth = imagesx($img);
         $imgHeight = imagesy($img);
         $imgSrc = imagecreatetruecolor($imgWidth + (self::$sizeBorder * 2), $imgHeight + (self::$sizeBorder * 2));
@@ -212,19 +214,22 @@ class Divider
                 // Нарезаем на символы
                 foreach ($beginHeightChar as $beginKey => $beginValue) {
                     $tmpImg = imagecreatetruecolor($endHeightChar[$beginKey] - $beginValue, $wordHeight);
-                    $white = imagecolorallocate($tmpImg, 255, 255, 255);
+                    $white = imagecolorallocate($tmpImg, Recognizer::$background['red'], Recognizer::$background['green'], Recognizer::$background['blue']);
                     imagefill($tmpImg, 0, 0, $white);
                     imagecopy($tmpImg, $wordValue, 0, 0, $beginValue, 0, $endHeightChar[$beginKey] - $beginValue, $wordHeight);
                     $wight = imagesx($tmpImg);
                     $coordinates = self::coordinatesImg($tmpImg, 0, 1);
-                    $imgChar = imagecreatetruecolor($wight, $coordinates['end'][0] - $coordinates['start'][0]);
-                    $white = imagecolorallocate($imgChar, 255, 255, 255);
+                    $start = $coordinates['start'][0];
+                    $end = end($coordinates['end']);
+                    $imgChar = imagecreatetruecolor($wight, $end - $start);
+                    $white = imagecolorallocate($imgChar, Recognizer::$background['red'], Recognizer::$background['green'], Recognizer::$background['blue']);
                     imagefill($imgChar, 0, 0, $white);
-                    imagecopy($imgChar, $tmpImg, 0, 0, 0, $coordinates['start'][0], $wight, $coordinates['end'][0]);
+                    imagecopy($imgChar, $tmpImg, 0, 0, 0, $start, $wight, $end);
                     $imgChars[$lineKey][$wordKey][] = $imgChar;
                 }
             }
         }
+
         return $imgChars;
     }
 
@@ -238,7 +243,7 @@ class Divider
     protected static function coordinatesImg($img, $rotate = 0, $border = 2)
     {
         if ($rotate) {
-            $white = imagecolorallocate($img, 255, 255, 255);
+            $white = imagecolorallocate($img, Recognizer::$background['red'], Recognizer::$background['green'], Recognizer::$background['blue']);
             $img = imagerotate($img, $rotate, $white);
         }
         // Находим среднее значение яркости каждой пиксельной строки и всего рисунка

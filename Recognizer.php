@@ -14,7 +14,7 @@ namespace bpteam\phpOCR;
 class Recognizer {
 
     protected static $templateDir = null;
-
+    public static $background = ['red' => 255, 'green' => 255, 'blue' => 255, 'alpha' => 0];
     /**
      * Погрешность в сравнении с шаблоном в процентах
      * @var float
@@ -30,7 +30,9 @@ class Recognizer {
         $img = Img::open($imgFile);
         if ($img) {
             $img = Divider::changeBackgroundBrightness($img);
-            $img = Divider::addBorder($img);
+            $colorIndexes = Divider::getColorsIndexTextAndBackground($img);
+            self::$background = imagecolorsforindex($img, $colorIndexes['background']);
+            $img = Divider::addBorder($img, self::$background['red'], self::$background['green'], self::$background['blue']);
         }
         return $img;
     }
@@ -205,6 +207,7 @@ class Recognizer {
     {
         $templateChars = [];
         foreach ($imgs as $value) {
+            //Img::show($value);
             $templateChars[] = self::generateTemplateChar($value);
         }
         $templateChars = array_unique($templateChars);

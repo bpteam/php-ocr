@@ -79,7 +79,7 @@ class Img {
         $sizeX = imagesx($img);
         $sizeY = imagesy($img);
         $newImg = imagecreatetruecolor($width, $height);
-        $white = imagecolorallocate($newImg, 255, 255, 255);
+        $white = imagecolorallocate($newImg, Recognizer::$background['red'], Recognizer::$background['green'], Recognizer::$background['blue']);
         imagefill($newImg, 0, 0, $white);
         if ($sizeX < $sizeY) {
             $width = $sizeX * ($height / $sizeY);
@@ -93,8 +93,11 @@ class Img {
 
     public static function show($img, $extension = 'png', $prefix = 0, $dirToSave = false)
     {
+        //return false;
+        $home = $_SERVER["DOCUMENT_ROOT"] . '/';
+        $subDir = str_replace($home, '', __DIR__);
         if (!$dirToSave)
-            $dirToSave = 'example/tmp/';
+            $dirToSave = '/' . $subDir .'/example/tmp/';
         if (is_array($img)) {
             foreach ($img as $key => $value) {
                 self::show($value, $extension);
@@ -102,10 +105,10 @@ class Img {
         } else {
             $random = rand();
             $picName = $dirToSave . 'img' . $prefix . $random . '.' . $extension;
-            $fileHead = fopen($picName, 'w+');
+            $fileHead = fopen( $home . $picName, 'w+');
             fwrite($fileHead, '');
             fclose($fileHead);
-            imagepng($img, $picName, 9);
+            imagepng($img, $home . $picName, 9);
             echo "<img src='" . $picName . "'></br>\n";
         }
     }
