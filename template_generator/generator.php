@@ -18,17 +18,17 @@ error_reporting(E_ALL);
 set_time_limit(600);
 
 if (!isset($_POST['Submit1'])) {
-    $templateName = 'olx';
+    $templateName = 'blue_img';
     $picFiles = [];
     $maxTemplate = 1;
     for ($i = 1; file_exists(__DIR__ . '/../template/test_img/' . $templateName . $i . '.png') && $i <= $maxTemplate; $i++) {
         $picFiles[] = __DIR__ . '/../template/test_img/' . $templateName . $i . '.png';
     }
     $chars = [];
+    Recognizer::setInfelicity(1);
     foreach ($picFiles as $key => $fileName) {
         $img = Recognizer::openImg($fileName);
         Img::show($img);
-        Recognizer::setInfelicity(10);
         $imgs = Divider::byChar($img);
         if (is_array($imgs)) {
             $chars = array_merge($chars, $imgs);

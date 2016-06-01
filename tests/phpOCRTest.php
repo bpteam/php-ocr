@@ -204,12 +204,11 @@ class phpOCRTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(11, imagesy($resizeImg));
     }
 
-    public function testGenerateTemplateChar()
+    public function testBlueBackground()
     {
-        $img = Recognizer::openImg(__DIR__ . '/../template/test_img/olx1.png');
-        $width = imagesx($img);
-        $height = imagesy($img);
-        $template = Recognizer::generateTemplateChar($img, $width, $height);
-        $this->assertEquals(preg_match_all('%[01]%', $template), $width * $height);
+        Recognizer::setInfelicity(1);
+        $text = Recognizer::read(__DIR__ . '/../template/test_img/blue_img1.png', Recognizer::loadTemplate('blue_background'));
+        $this->assertEquals('+7(91 8) 432-57-00',$text);
     }
+
 }
